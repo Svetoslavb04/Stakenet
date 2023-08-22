@@ -15,9 +15,30 @@ describe("Stakenet", function () {
       await stakenet.limeSpark(),
     );
 
-    const [owner, otherAccount] = await ethers.getSigners();
+    const [stakenetOwner, otherAccount] = await ethers.getSigners();
 
-    return { stakenet, limeSpark, owner, otherAccount };
+    return { stakenet, limeSpark, stakenetOwner, otherAccount };
+  }
+
+  async function deployFixtureWithStakenetApproval() {
+    const Stakenet = await ethers.getContractFactory("Stakenet");
+    const stakenet = await Stakenet.deploy();
+
+    await stakenet.waitForDeployment();
+
+    const limeSpark = await ethers.getContractAt(
+      "LimeSpark",
+      await stakenet.limeSpark(),
+    );
+
+    const [stakenetOwner, otherAccount] = await ethers.getSigners();
+
+    await limeSpark.connect(otherAccount).mintInitial();
+    await limeSpark
+      .connect(otherAccount)
+      .approve(await stakenet.getAddress(), ethers.parseUnits("100", 18));
+
+    return { stakenet, limeSpark, stakenetOwner, otherAccount };
   }
 
   describe("Deployment", () => {
@@ -50,10 +71,10 @@ describe("Stakenet", function () {
   describe("Mint", () => {
     describe("Action", () => {
       it("Should mint tokens to a given addess", async () => {
-        const { stakenet, owner, otherAccount } =
+        const { stakenet, stakenetOwner, otherAccount } =
           await loadFixture(deployFixture);
 
-        await stakenet.connect(owner).mint(otherAccount, 10);
+        await stakenet.connect(stakenetOwner).mint(otherAccount, 10);
         expect(await stakenet.balanceOf(otherAccount)).to.be.equal(10);
       });
     });
@@ -65,6 +86,49 @@ describe("Stakenet", function () {
         await expect(
           stakenet.connect(otherAccount).mint(otherAccount, 10),
         ).to.revertedWith("Ownable: caller is not the owner");
+      });
+    });
+  });
+
+  describe("Stake", () => {
+    describe("Action", () => {
+      it("Should correctly transfer tokens from account to stakenet's account", async () => {
+        const { stakenet, limeSpark, stakenetOwner, otherAccount } =
+          await loadFixture(deployFixtureWithStakenetApproval);
+
+        await stakenet.connect(otherAccount).stake(ethers.parseUnits("99", 18));
+
+        expect(await limeSpark.balanceOf(otherAccount)).to.be.equal(
+          ethers.parseUnits("1", 18),
+        );
+        expect(
+          await limeSpark.balanceOf(await stakenet.getAddress()),
+        ).to.be.equal(ethers.parseUnits("99", 18));
+      });
+      it("Should correctly mints StakedLimeStark upon stake in stakenet", async () => {
+        const { stakenet, limeSpark, otherAccount } = await loadFixture(
+          deployFixtureWithStakenetApproval,
+        );
+
+        await stakenet.connect(otherAccount).stake(ethers.parseUnits("99", 18));
+
+        expect(await stakenet.balanceOf(otherAccount)).to.be.equal(
+          ethers.parseUnits("99", 18),
+        );
+      });
+    });
+
+    describe("Validations", () => {
+      it("Should revert if user has already staked", async () => {
+        const { stakenet, limeSpark, otherAccount } = await loadFixture(
+          deployFixtureWithStakenetApproval,
+        );
+
+        await stakenet.connect(otherAccount).stake(ethers.parseUnits("20", 18));
+
+        await expect(
+          stakenet.connect(otherAccount).stake(ethers.parseUnits("20", 18)),
+        ).to.revertedWithCustomError(stakenet, "AccountHasAlreadyStaked");
       });
     });
   });

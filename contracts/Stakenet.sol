@@ -8,13 +8,31 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { LimeSpark } from "./LimeSpark.sol";
 
 contract Stakenet is ERC20, ERC20Burnable, Ownable {
+    error AccountHasAlreadyStaked();
+
     LimeSpark public limeSpark;
+
+    mapping(address => bool) userHasStaked;
+
+    modifier hasNotStaked(address account) {
+        if (userHasStaked[account]) {
+            revert AccountHasAlreadyStaked();
+        }
+
+        _;
+    }
 
     constructor() ERC20("StakedLimeSpark", "SLSK") {
         limeSpark = new LimeSpark(100 * 10 ** 18);
     }
 
-    function mint(address to, uint256 amount) public onlyOwner {
-        _mint(to, amount);
+    function mint(address _to, uint256 _amount) public onlyOwner {
+        _mint(_to, _amount);
+    }
+
+    function stake(uint256 _amount) external hasNotStaked(msg.sender) {
+        limeSpark.transferFrom(msg.sender, address(this), _amount);
+        _mint(msg.sender, _amount);
+        userHasStaked[msg.sender] = true;
     }
 }
