@@ -93,42 +93,76 @@ describe("Stakenet", function () {
   describe("Stake", () => {
     describe("Action", () => {
       it("Should correctly transfer tokens from account to stakenet's account", async () => {
-        const { stakenet, limeSpark, stakenetOwner, otherAccount } =
-          await loadFixture(deployFixtureWithStakenetApproval);
+        const { stakenet, limeSpark, otherAccount } = await loadFixture(
+          deployFixtureWithStakenetApproval,
+        );
 
-        await stakenet.connect(otherAccount).stake(ethers.parseUnits("99", 18));
+        const stake = ethers.parseUnits("99", 18);
+
+        await stakenet.connect(otherAccount).stake(stake);
 
         expect(await limeSpark.balanceOf(otherAccount)).to.be.equal(
           ethers.parseUnits("1", 18),
         );
         expect(
           await limeSpark.balanceOf(await stakenet.getAddress()),
-        ).to.be.equal(ethers.parseUnits("99", 18));
+        ).to.be.equal(stake);
       });
+
       it("Should correctly mints StakedLimeStark upon stake in stakenet", async () => {
-        const { stakenet, limeSpark, otherAccount } = await loadFixture(
+        const { stakenet, otherAccount } = await loadFixture(
           deployFixtureWithStakenetApproval,
         );
 
-        await stakenet.connect(otherAccount).stake(ethers.parseUnits("99", 18));
+        const stake = ethers.parseUnits("99", 18);
 
-        expect(await stakenet.balanceOf(otherAccount)).to.be.equal(
-          ethers.parseUnits("99", 18),
-        );
+        await stakenet.connect(otherAccount).stake(stake);
+
+        expect(await stakenet.balanceOf(otherAccount)).to.be.equal(stake);
       });
     });
 
     describe("Validations", () => {
       it("Should revert if user has already staked", async () => {
-        const { stakenet, limeSpark, otherAccount } = await loadFixture(
+        const { stakenet, otherAccount } = await loadFixture(
           deployFixtureWithStakenetApproval,
         );
 
-        await stakenet.connect(otherAccount).stake(ethers.parseUnits("20", 18));
+        const stake = ethers.parseUnits("20", 18);
+
+        await stakenet.connect(otherAccount).stake(stake);
 
         await expect(
-          stakenet.connect(otherAccount).stake(ethers.parseUnits("20", 18)),
+          stakenet.connect(otherAccount).stake(stake),
         ).to.revertedWithCustomError(stakenet, "AccountHasAlreadyStaked");
+      });
+    });
+  });
+
+  describe("TransferPosition", () => {
+    describe("Action", () => {
+      it("Should transfer msg.sender's position to a given user", async () => {
+        const { stakenet, stakenetOwner, otherAccount } = await loadFixture(
+          deployFixtureWithStakenetApproval,
+        );
+
+        const stake = ethers.parseUnits("10", 18);
+
+        await stakenet.connect(otherAccount).stake(ethers.parseUnits("10", 18));
+        await stakenet.connect(otherAccount).transferPosition(stakenetOwner);
+
+        expect(await stakenet.balanceOf(stakenetOwner)).to.be.equal(stake);
+      });
+    });
+
+    describe("Validations", () => {
+      it("Should revert when trying to transfer position but does not own one", async () => {
+        const { stakenet, stakenetOwner, otherAccount } =
+          await loadFixture(deployFixture);
+
+        await expect(
+          stakenet.transferPosition(otherAccount),
+        ).to.revertedWithCustomError(stakenet, "AccountHasNotStaked");
       });
     });
   });

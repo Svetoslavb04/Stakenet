@@ -9,6 +9,7 @@ import { LimeSpark } from "./LimeSpark.sol";
 
 contract Stakenet is ERC20, ERC20Burnable, Ownable {
     error AccountHasAlreadyStaked();
+    error AccountHasNotStaked();
 
     LimeSpark public limeSpark;
 
@@ -17,6 +18,14 @@ contract Stakenet is ERC20, ERC20Burnable, Ownable {
     modifier hasNotStaked(address account) {
         if (userHasStaked[account]) {
             revert AccountHasAlreadyStaked();
+        }
+
+        _;
+    }
+
+    modifier hasStaked(address account) {
+        if (!userHasStaked[account]) {
+            revert AccountHasNotStaked();
         }
 
         _;
@@ -34,5 +43,9 @@ contract Stakenet is ERC20, ERC20Burnable, Ownable {
         limeSpark.transferFrom(msg.sender, address(this), _amount);
         _mint(msg.sender, _amount);
         userHasStaked[msg.sender] = true;
+    }
+
+    function transferPosition(address _to) external hasStaked(msg.sender) {
+        _transfer(msg.sender, _to, balanceOf(msg.sender));
     }
 }
