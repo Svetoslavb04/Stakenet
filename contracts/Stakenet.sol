@@ -19,16 +19,16 @@ contract Stakenet is ERC20, ERC20Burnable, Ownable {
     mapping(address => bool) public userHasStaked;
     mapping(address => uint256) public userStakedTimestamp;
 
-    modifier hasNotStaked(address account) {
-        if (userHasStaked[account]) {
+    modifier hasNotStaked() {
+        if (userHasStaked[msg.sender]) {
             revert AccountHasAlreadyStaked();
         }
 
         _;
     }
 
-    modifier hasStaked(address account) {
-        if (!userHasStaked[account]) {
+    modifier hasStaked() {
+        if (!userHasStaked[msg.sender]) {
             revert AccountHasNotStaked();
         }
 
@@ -46,14 +46,14 @@ contract Stakenet is ERC20, ERC20Burnable, Ownable {
         _mint(_to, _amount);
     }
 
-    function stake(uint256 _amount) external hasNotStaked(msg.sender) {
+    function stake(uint256 _amount) external hasNotStaked {
         limeSpark.transferFrom(msg.sender, address(this), _amount);
         _mint(msg.sender, _amount);
         userHasStaked[msg.sender] = true;
         userStakedTimestamp[msg.sender] = block.timestamp;
     }
 
-    function transferPosition(address _to) external hasStaked(msg.sender) {
+    function transferPosition(address _to) external hasStaked {
         userStakedTimestamp[_to] = Math.max(
             userStakedTimestamp[_to],
             userStakedTimestamp[msg.sender]
