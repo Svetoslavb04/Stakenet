@@ -8,9 +8,16 @@ describe("Stakenet", function () {
     const Stakenet = await ethers.getContractFactory("Stakenet");
     const stakenet = await Stakenet.deploy();
 
+    await stakenet.waitForDeployment();
+
+    const limeSpark = await ethers.getContractAt(
+      "LimeSpark",
+      await stakenet.limeSpark(),
+    );
+
     const [owner, otherAccount] = await ethers.getSigners();
 
-    return { stakenet, owner, otherAccount };
+    return { stakenet, limeSpark, owner, otherAccount };
   }
 
   describe("Deployment", () => {
@@ -22,6 +29,14 @@ describe("Stakenet", function () {
 
       expect(name).to.be.equal("StakedLimeSpark");
       expect(symbol).to.be.equal("SLSK");
+    });
+
+    it("Should deploy LimeStart contract with correct starter tokens", async () => {
+      const { limeSpark } = await loadFixture(deployFixture);
+
+      const starterTokens = await limeSpark.starterTokens();
+
+      expect(starterTokens).to.be.equal(ethers.parseUnits("100", 18));
     });
   });
 
