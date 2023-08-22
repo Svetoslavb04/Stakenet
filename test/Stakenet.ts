@@ -1,12 +1,18 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
+import {
+  loadFixture,
+  time,
+  mine,
+} from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 
 describe("Stakenet", function () {
   async function deployFixture() {
+    const oneDayInSeconds = 86_000;
+
     const Stakenet = await ethers.getContractFactory("Stakenet");
-    const stakenet = await Stakenet.deploy();
+    const stakenet = await Stakenet.deploy(oneDayInSeconds);
 
     await stakenet.waitForDeployment();
 
@@ -21,8 +27,10 @@ describe("Stakenet", function () {
   }
 
   async function deployFixtureWithStakenetApproval() {
+    const oneDayInSeconds = 86_000;
+
     const Stakenet = await ethers.getContractFactory("Stakenet");
-    const stakenet = await Stakenet.deploy();
+    const stakenet = await Stakenet.deploy(oneDayInSeconds);
 
     await stakenet.waitForDeployment();
 
@@ -120,6 +128,22 @@ describe("Stakenet", function () {
 
         expect(await stakenet.balanceOf(otherAccount)).to.be.equal(stake);
       });
+
+      it("Should correctly set stake timestamp per user", async () => {
+        const { stakenet, otherAccount } = await loadFixture(
+          deployFixtureWithStakenetApproval,
+        );
+
+        const stake = ethers.parseUnits("99", 18);
+
+        await stakenet.connect(otherAccount).stake(stake);
+
+        const latestBlockTimestamp = await time.latest();
+
+        expect(await stakenet.userStakedTimestamp(otherAccount)).to.be.equal(
+          latestBlockTimestamp,
+        );
+      });
     });
 
     describe("Validations", () => {
@@ -148,10 +172,70 @@ describe("Stakenet", function () {
 
         const stake = ethers.parseUnits("10", 18);
 
-        await stakenet.connect(otherAccount).stake(ethers.parseUnits("10", 18));
+        await stakenet.connect(otherAccount).stake(stake);
         await stakenet.connect(otherAccount).transferPosition(stakenetOwner);
 
         expect(await stakenet.balanceOf(stakenetOwner)).to.be.equal(stake);
+      });
+
+      it("Should set the position of the user to be the sum of its current plus the new one", async () => {
+        const { stakenet, limeSpark, stakenetOwner, otherAccount } =
+          await loadFixture(deployFixture);
+
+        const stakenetAddress = await stakenet.getAddress();
+
+        await limeSpark.connect(stakenetOwner).mintInitial();
+        await limeSpark
+          .connect(stakenetOwner)
+          .approve(stakenetAddress, ethers.parseUnits("100", 18));
+
+        await limeSpark.connect(otherAccount).mintInitial();
+        await limeSpark
+          .connect(otherAccount)
+          .approve(stakenetAddress, ethers.parseUnits("100", 18));
+
+        await stakenet
+          .connect(stakenetOwner)
+          .stake(ethers.parseUnits("10", 18));
+        mine(10);
+        await stakenet.connect(otherAccount).stake(ethers.parseUnits("10", 18));
+        mine(10);
+
+        await stakenet.connect(otherAccount).transferPosition(stakenetOwner);
+
+        expect(await stakenet.balanceOf(stakenetOwner)).to.be.equal(
+          ethers.parseUnits("20", 18),
+        );
+      });
+
+      it("Should set the correct lock date of the new position of the receiver. Should be the max of the two positions", async () => {
+        const { stakenet, limeSpark, stakenetOwner, otherAccount } =
+          await loadFixture(deployFixture);
+
+        const stakenetAddress = await stakenet.getAddress();
+
+        await limeSpark.connect(stakenetOwner).mintInitial();
+        await limeSpark
+          .connect(stakenetOwner)
+          .approve(stakenetAddress, ethers.parseUnits("100", 18));
+
+        await limeSpark.connect(otherAccount).mintInitial();
+        await limeSpark
+          .connect(otherAccount)
+          .approve(stakenetAddress, ethers.parseUnits("100", 18));
+
+        await stakenet
+          .connect(stakenetOwner)
+          .stake(ethers.parseUnits("10", 18));
+        mine(10);
+        await stakenet.connect(otherAccount).stake(ethers.parseUnits("10", 18));
+        mine(10);
+
+        await stakenet.connect(otherAccount).transferPosition(stakenetOwner);
+
+        expect(await stakenet.userStakedTimestamp(stakenetOwner)).to.be.equal(
+          await stakenet.userStakedTimestamp(otherAccount),
+        );
       });
     });
 
