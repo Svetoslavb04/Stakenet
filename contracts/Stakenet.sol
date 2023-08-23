@@ -49,10 +49,6 @@ contract Stakenet is ERC20, ERC20Burnable, Ownable {
         yieldPercentage = _yieldPercentage;
     }
 
-    function mint(address _to, uint256 _amount) public onlyOwner {
-        _mint(_to, _amount);
-    }
-
     function stake(uint256 _amount) external hasNotStaked {
         erc20.transferFrom(msg.sender, address(this), _amount);
         _mint(msg.sender, _amount);

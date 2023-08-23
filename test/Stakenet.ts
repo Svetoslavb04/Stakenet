@@ -98,28 +98,6 @@ describe("Stakenet", function () {
     });
   });
 
-  describe("Mint", () => {
-    describe("Action", () => {
-      it("Should mint tokens to a given addess", async () => {
-        const { stakenet, stakenetOwner, otherAccount } =
-          await loadFixture(deployFixture);
-
-        await stakenet.connect(stakenetOwner).mint(otherAccount, 10);
-        expect(await stakenet.balanceOf(otherAccount)).to.be.equal(10);
-      });
-    });
-
-    describe("Validation", () => {
-      it("Should revert if not owner tries to mint tokens", async () => {
-        const { stakenet, otherAccount } = await loadFixture(deployFixture);
-
-        await expect(
-          stakenet.connect(otherAccount).mint(otherAccount, 10),
-        ).to.revertedWith("Ownable: caller is not the owner");
-      });
-    });
-  });
-
   describe("Stake", () => {
     describe("Action", () => {
       it("Should correctly transfer tokens from account to stakenet's account", async () => {
