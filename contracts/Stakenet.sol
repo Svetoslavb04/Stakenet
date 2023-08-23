@@ -11,6 +11,7 @@ import { LimeSpark } from "./LimeSpark.sol";
 contract Stakenet is ERC20, ERC20Burnable, Ownable {
     error AccountHasAlreadyStaked();
     error AccountHasNotStaked();
+    error TokensNotUnlockedYet(uint256 unlockTime);
 
     LimeSpark public limeSpark;
 
@@ -60,5 +61,19 @@ contract Stakenet is ERC20, ERC20Burnable, Ownable {
         );
 
         _transfer(msg.sender, _to, balanceOf(msg.sender));
+    }
+
+    function withdraw() external hasStaked {
+        if (
+            block.timestamp <=
+            userStakedTimestamp[msg.sender] + lockDurationInSeconds
+        ) {
+            revert TokensNotUnlockedYet(
+                userStakedTimestamp[msg.sender] + lockDurationInSeconds
+            );
+        }
+
+        limeSpark.transfer(msg.sender, balanceOf(msg.sender));
+        _burn(msg.sender, balanceOf(msg.sender));
     }
 }

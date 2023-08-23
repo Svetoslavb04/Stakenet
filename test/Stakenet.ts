@@ -23,7 +23,13 @@ describe("Stakenet", function () {
 
     const [stakenetOwner, otherAccount] = await ethers.getSigners();
 
-    return { stakenet, limeSpark, stakenetOwner, otherAccount };
+    return {
+      stakenet,
+      limeSpark,
+      stakenetOwner,
+      otherAccount,
+      lockDuration: oneDayInSeconds,
+    };
   }
 
   async function deployFixtureWithStakenetApproval() {
@@ -46,7 +52,13 @@ describe("Stakenet", function () {
       .connect(otherAccount)
       .approve(await stakenet.getAddress(), ethers.parseUnits("100", 18));
 
-    return { stakenet, limeSpark, stakenetOwner, otherAccount };
+    return {
+      stakenet,
+      limeSpark,
+      stakenetOwner,
+      otherAccount,
+      lockDuration: oneDayInSeconds,
+    };
   }
 
   describe("Deployment", () => {
@@ -197,9 +209,12 @@ describe("Stakenet", function () {
         await stakenet
           .connect(stakenetOwner)
           .stake(ethers.parseUnits("10", 18));
-        mine(10);
+
+        await mine(10);
+
         await stakenet.connect(otherAccount).stake(ethers.parseUnits("10", 18));
-        mine(10);
+
+        await mine(10);
 
         await stakenet.connect(otherAccount).transferPosition(stakenetOwner);
 
@@ -227,9 +242,12 @@ describe("Stakenet", function () {
         await stakenet
           .connect(stakenetOwner)
           .stake(ethers.parseUnits("10", 18));
-        mine(10);
+
+        await mine(10);
+
         await stakenet.connect(otherAccount).stake(ethers.parseUnits("10", 18));
-        mine(10);
+
+        await mine(10);
 
         await stakenet.connect(otherAccount).transferPosition(stakenetOwner);
 
@@ -246,6 +264,52 @@ describe("Stakenet", function () {
 
         await expect(
           stakenet.transferPosition(otherAccount),
+        ).to.revertedWithCustomError(stakenet, "AccountHasNotStaked");
+      });
+    });
+  });
+
+  describe("Withdraw", () => {
+    describe("Action", () => {
+      it("Should withdraw the tokens if transaction is after the lock date", async () => {
+        const { stakenet, limeSpark, otherAccount } = await loadFixture(
+          deployFixtureWithStakenetApproval,
+        );
+
+        await stakenet.connect(otherAccount).stake(ethers.parseUnits("10", 18));
+
+        const oneDay = 86_000;
+
+        await mine(2, { interval: oneDay });
+
+        await stakenet.connect(otherAccount).withdraw();
+
+        expect(await limeSpark.balanceOf(otherAccount)).to.be.equal(
+          ethers.parseUnits("100", 18),
+        );
+      });
+    });
+
+    describe("Validation", () => {
+      it("Should revert if try to withdraw before lock date", async () => {
+        const { stakenet, otherAccount, lockDuration } = await loadFixture(
+          deployFixtureWithStakenetApproval,
+        );
+
+        await stakenet.connect(otherAccount).stake(ethers.parseUnits("10", 18));
+
+        const userStakeTime = await stakenet.userStakedTimestamp(otherAccount);
+
+        await expect(stakenet.connect(otherAccount).withdraw())
+          .to.revertedWithCustomError(stakenet, "TokensNotUnlockedYet")
+          .withArgs(ethers.getNumber(userStakeTime) + lockDuration);
+      });
+
+      it("Should revert if not staked", async () => {
+        const { stakenet, otherAccount } = await loadFixture(deployFixture);
+
+        await expect(
+          stakenet.connect(otherAccount).withdraw(),
         ).to.revertedWithCustomError(stakenet, "AccountHasNotStaked");
       });
     });
