@@ -11,15 +11,19 @@ describe("Stakenet", function () {
   async function deployFixture() {
     const oneDayInSeconds = 86_000;
 
+    const LimeSpark = await ethers.getContractFactory("LimeSpark");
+    const limeSpark = await LimeSpark.deploy(ethers.parseUnits("100", 18));
+
+    await limeSpark.waitForDeployment();
+
     const Stakenet = await ethers.getContractFactory("Stakenet");
-    const stakenet = await Stakenet.deploy(oneDayInSeconds);
+    const stakenet = await Stakenet.deploy(
+      await limeSpark.getAddress(),
+      oneDayInSeconds,
+      10_00,
+    );
 
     await stakenet.waitForDeployment();
-
-    const limeSpark = await ethers.getContractAt(
-      "LimeSpark",
-      await stakenet.limeSpark(),
-    );
 
     const [stakenetOwner, otherAccount] = await ethers.getSigners();
 
@@ -35,15 +39,19 @@ describe("Stakenet", function () {
   async function deployFixtureWithStakenetApproval() {
     const oneDayInSeconds = 86_000;
 
+    const LimeSpark = await ethers.getContractFactory("LimeSpark");
+    const limeSpark = await LimeSpark.deploy(ethers.parseUnits("100", 18));
+
+    await limeSpark.waitForDeployment();
+
     const Stakenet = await ethers.getContractFactory("Stakenet");
-    const stakenet = await Stakenet.deploy(oneDayInSeconds);
+    const stakenet = await Stakenet.deploy(
+      await limeSpark.getAddress(),
+      oneDayInSeconds,
+      10_00,
+    );
 
     await stakenet.waitForDeployment();
-
-    const limeSpark = await ethers.getContractAt(
-      "LimeSpark",
-      await stakenet.limeSpark(),
-    );
 
     const [stakenetOwner, otherAccount] = await ethers.getSigners();
 
@@ -67,9 +75,11 @@ describe("Stakenet", function () {
 
       const name = await stakenet.name();
       const symbol = await stakenet.symbol();
+      const _yieldPercentage = await stakenet.yieldPercentage();
 
       expect(name).to.be.equal("StakedLimeSpark");
       expect(symbol).to.be.equal("SLSK");
+      expect(_yieldPercentage).to.be.equal(10_00n);
     });
 
     it("Should deploy LimeStart contract with correct starter tokens", async () => {
@@ -272,11 +282,26 @@ describe("Stakenet", function () {
   describe("Withdraw", () => {
     describe("Action", () => {
       it("Should withdraw the tokens if transaction is after the lock date", async () => {
-        const { stakenet, limeSpark, otherAccount } = await loadFixture(
-          deployFixtureWithStakenetApproval,
+        const { stakenet, limeSpark, stakenetOwner, otherAccount } =
+          await loadFixture(deployFixtureWithStakenetApproval);
+
+        await limeSpark
+          .connect(stakenetOwner)
+          .mint(await stakenet.getAddress(), ethers.parseUnits("100", 18));
+
+        expect(await limeSpark.balanceOf(stakenet.getAddress())).to.be.equal(
+          ethers.parseUnits("100", 18),
         );
 
         await stakenet.connect(otherAccount).stake(ethers.parseUnits("10", 18));
+
+        const stakedTokens = await stakenet.balanceOf(otherAccount);
+        const yieldPercentage = await stakenet.yieldPercentage();
+        const yieldDecimals = await stakenet.yieldDecimals();
+
+        const accumulatedYield =
+          (stakedTokens * yieldPercentage) /
+          ethers.parseUnits("100", yieldDecimals);
 
         const oneDay = 86_000;
 
@@ -285,7 +310,7 @@ describe("Stakenet", function () {
         await stakenet.connect(otherAccount).withdraw();
 
         expect(await limeSpark.balanceOf(otherAccount)).to.be.equal(
-          ethers.parseUnits("100", 18),
+          ethers.parseUnits("100", 18) + accumulatedYield,
         );
       });
     });
@@ -311,6 +336,22 @@ describe("Stakenet", function () {
         await expect(
           stakenet.connect(otherAccount).withdraw(),
         ).to.revertedWithCustomError(stakenet, "AccountHasNotStaked");
+      });
+    });
+  });
+
+  describe("YieldDecimals", () => {
+    it("Should return the correct yield decimals", async () => {
+      const { stakenet } = await loadFixture(deployFixture);
+
+      expect(await stakenet.yieldDecimals()).to.be.equal(2);
+    });
+  });
+
+  describe("Calculate Yield", () => {
+    describe("Actions", () => {
+      it("Should calculate correct reward", async () => {
+        const { stakenet } = await loadFixture(deployFixture);
       });
     });
   });
