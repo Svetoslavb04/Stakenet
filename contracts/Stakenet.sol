@@ -13,6 +13,8 @@ contract Stakenet is ERC20, ERC20Burnable {
     error TokensNotUnlockedYet(uint256 unlockTime);
     error InvalidStakeLimit();
     error YieldPercentageTooBig(uint256 yield);
+    error StakeTooHigh(uint256 userStakeLimit, uint256 contractStakeLimit);
+    error StakeTooLow(uint256 minimumStake);
 
     ERC20 public erc20;
 
@@ -73,6 +75,13 @@ contract Stakenet is ERC20, ERC20Burnable {
     }
 
     function stake(uint256 _amount) external hasNotStaked {
+        if (contractStakeLimit < _amount || userStakeLimit < _amount) {
+            revert StakeTooHigh(userStakeLimit, contractStakeLimit);
+        }
+        if (userMinimumStake > _amount) {
+            revert StakeTooLow(userMinimumStake);
+        }
+
         _mint(msg.sender, _amount);
 
         userHasStaked[msg.sender] = true;
@@ -108,6 +117,9 @@ contract Stakenet is ERC20, ERC20Burnable {
 
         _burn(msg.sender, stakedTokens);
 
+        rewards -= accumulatedYield;
+        contractStakeLimit = calculateContractStakeLimit();
+
         erc20.transfer(msg.sender, stakedTokens + accumulatedYield);
     }
 
@@ -123,6 +135,10 @@ contract Stakenet is ERC20, ERC20Burnable {
         }
 
         return uint24(yield);
+    }
+
+    function calculateContractStakeLimit() internal view returns (uint256) {
+        return (rewards * 100_0000) / yieldPercentage;
     }
 
     function calculateMinStake() public view returns (uint256) {
