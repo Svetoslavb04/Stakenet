@@ -5,7 +5,6 @@ import {
   time,
   mine,
 } from "@nomicfoundation/hardhat-toolbox/network-helpers";
-import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 
 describe("Stakenet", function () {
   async function deployFixture() {
@@ -20,7 +19,9 @@ describe("Stakenet", function () {
     const stakenet = await Stakenet.deploy(
       await limeSpark.getAddress(),
       oneDayInSeconds,
-      10_00,
+      ethers.parseEther("100"),
+      ethers.parseUnits("1", 21),
+      ethers.parseUnits("1", 19),
     );
 
     await stakenet.waitForDeployment();
@@ -48,7 +49,9 @@ describe("Stakenet", function () {
     const stakenet = await Stakenet.deploy(
       await limeSpark.getAddress(),
       oneDayInSeconds,
-      10_00,
+      ethers.parseEther("100"),
+      ethers.parseUnits("1", 21),
+      ethers.parseUnits("1", 19),
     );
 
     await stakenet.waitForDeployment();
@@ -70,24 +73,100 @@ describe("Stakenet", function () {
   }
 
   describe("Deployment", () => {
-    it("Should deploy with correct name, symbol and starterTokens", async () => {
-      const { stakenet } = await loadFixture(deployFixture);
+    describe("Action", () => {
+      it("Should deploy with correct name, symbol and starterTokens", async () => {
+        const { stakenet } = await loadFixture(deployFixture);
 
-      const name = await stakenet.name();
-      const symbol = await stakenet.symbol();
-      const _yieldPercentage = await stakenet.yieldPercentage();
+        const name = await stakenet.name();
+        const symbol = await stakenet.symbol();
+        const _yieldPercentage = await stakenet.yieldPercentage();
 
-      expect(name).to.be.equal("StakedLimeSpark");
-      expect(symbol).to.be.equal("SLSK");
-      expect(_yieldPercentage).to.be.equal(10_00n);
+        expect(name).to.be.equal("StakedLimeSpark");
+        expect(symbol).to.be.equal("SLSK");
+        expect(_yieldPercentage).to.be.equal(10_0000n);
+      });
+
+      it("Should deploy LimeStart contract with correct starter tokens", async () => {
+        const { limeSpark } = await loadFixture(deployFixture);
+
+        const starterTokens = await limeSpark.starterTokens();
+
+        expect(starterTokens).to.be.equal(ethers.parseUnits("100", 18));
+      });
     });
 
-    it("Should deploy LimeStart contract with correct starter tokens", async () => {
-      const { limeSpark } = await loadFixture(deployFixture);
+    describe("Validations", async () => {
+      it("Should revert with contract stake limit set to 0", async () => {
+        const LimeSpark = await ethers.getContractFactory("LimeSpark");
+        const limeSpark = await LimeSpark.deploy(ethers.parseUnits("100", 18));
 
-      const starterTokens = await limeSpark.starterTokens();
+        await limeSpark.waitForDeployment();
+        const Stakenet = await ethers.getContractFactory("Stakenet");
 
-      expect(starterTokens).to.be.equal(ethers.parseUnits("100", 18));
+        await expect(
+          Stakenet.deploy(
+            await limeSpark.getAddress(),
+            0,
+            ethers.parseEther("100"),
+            0,
+            ethers.parseUnits("1", 19),
+          ),
+        ).to.revertedWithCustomError(Stakenet, "InvalidStakeLimit");
+      });
+
+      it("Should revert with user stake limit set to 0", async () => {
+        const LimeSpark = await ethers.getContractFactory("LimeSpark");
+        const limeSpark = await LimeSpark.deploy(ethers.parseUnits("100", 18));
+
+        await limeSpark.waitForDeployment();
+        const Stakenet = await ethers.getContractFactory("Stakenet");
+
+        await expect(
+          Stakenet.deploy(
+            await limeSpark.getAddress(),
+            0,
+            ethers.parseEther("100"),
+            ethers.parseUnits("1", 19),
+            0,
+          ),
+        ).to.revertedWithCustomError(Stakenet, "InvalidStakeLimit");
+      });
+
+      it("Should revert if user stake limit is greater than contract stake limit", async () => {
+        const LimeSpark = await ethers.getContractFactory("LimeSpark");
+        const limeSpark = await LimeSpark.deploy(ethers.parseUnits("100", 18));
+
+        await limeSpark.waitForDeployment();
+        const Stakenet = await ethers.getContractFactory("Stakenet");
+
+        await expect(
+          Stakenet.deploy(
+            await limeSpark.getAddress(),
+            0,
+            ethers.parseEther("100"),
+            ethers.parseUnits("1", 19),
+            ethers.parseUnits("12", 19),
+          ),
+        ).to.revertedWithCustomError(Stakenet, "InvalidStakeLimit");
+      });
+
+      it("Should revert if yield is too big (grater than uint32 max value)", async () => {
+        const LimeSpark = await ethers.getContractFactory("LimeSpark");
+        const limeSpark = await LimeSpark.deploy(ethers.parseUnits("100", 18));
+
+        await limeSpark.waitForDeployment();
+        const Stakenet = await ethers.getContractFactory("Stakenet");
+
+        await expect(
+          Stakenet.deploy(
+            await limeSpark.getAddress(),
+            0,
+            ethers.parseEther("1"),
+            "59604644775390625",
+            ethers.parseUnits("1", 0),
+          ),
+        ).to.revertedWithCustomError(Stakenet, "YieldPercentageTooBig");
+      });
     });
   });
 

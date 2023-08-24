@@ -11,11 +11,19 @@ contract Stakenet is ERC20, ERC20Burnable {
     error AccountHasAlreadyStaked();
     error AccountHasNotStaked();
     error TokensNotUnlockedYet(uint256 unlockTime);
+    error InvalidStakeLimit();
+    error YieldPercentageTooBig(uint256 yield);
 
     ERC20 public erc20;
 
     uint256 public immutable lockDurationInSeconds;
-    uint32 public immutable yieldPercentage;
+    uint24 public immutable yieldPercentage;
+
+    uint256 public rewards;
+
+    uint256 public contractStakeLimit;
+    uint256 public userStakeLimit;
+    uint256 public userMinimumStake;
 
     mapping(address => bool) public userHasStaked;
     mapping(address => uint256) public userStakedTimestamp;
@@ -39,11 +47,29 @@ contract Stakenet is ERC20, ERC20Burnable {
     constructor(
         address erc20TokenAddress,
         uint256 _lockDurationInSeconds,
-        uint32 _yieldPercentage
+        uint256 _rewards,
+        uint256 _contractStakeLimit,
+        uint256 _userStakeLimit
     ) ERC20("StakedLimeSpark", "SLSK") {
         erc20 = ERC20(erc20TokenAddress);
+
         lockDurationInSeconds = _lockDurationInSeconds;
-        yieldPercentage = _yieldPercentage;
+        rewards = _rewards;
+
+        if (
+            _contractStakeLimit == 0 ||
+            _userStakeLimit == 0 ||
+            _userStakeLimit > _contractStakeLimit
+        ) {
+            revert InvalidStakeLimit();
+        }
+
+        contractStakeLimit = _contractStakeLimit;
+        userStakeLimit = _userStakeLimit;
+
+        yieldPercentage = calculateYield();
+
+        userMinimumStake = calculateMinStake();
     }
 
     function stake(uint256 _amount) external hasNotStaked {
@@ -72,7 +98,9 @@ contract Stakenet is ERC20, ERC20Burnable {
             );
         }
 
-        uint256 accumulatedYield = calculateYield(balanceOf(msg.sender));
+        uint256 accumulatedYield = calculateAccumulatedYield(
+            balanceOf(msg.sender)
+        );
 
         erc20.transfer(msg.sender, (balanceOf(msg.sender) + accumulatedYield));
 
@@ -83,7 +111,21 @@ contract Stakenet is ERC20, ERC20Burnable {
         return 4;
     }
 
-    function calculateYield(
+    function calculateYield() internal view returns (uint24) {
+        uint256 yield = (rewards * 100_0000) / contractStakeLimit;
+
+        if (yield > type(uint24).max) {
+            revert YieldPercentageTooBig(yield);
+        }
+
+        return uint24(yield);
+    }
+
+    function calculateMinStake() public view returns (uint256) {
+        return 100_0000 / yieldPercentage;
+    }
+
+    function calculateAccumulatedYield(
         uint256 tokens
     ) internal view returns (uint256 accumulatedYield) {
         accumulatedYield =
