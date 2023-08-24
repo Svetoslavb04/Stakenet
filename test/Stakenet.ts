@@ -17,6 +17,8 @@ describe("Stakenet", function () {
 
     await limeSpark.waitForDeployment();
 
+    await limeSpark.mintInitial();
+
     const Stakenet = await ethers.getContractFactory("Stakenet");
     const stakenet = await Stakenet.connect(stakenetOwner).deploy(
       await limeSpark.getAddress(),
@@ -58,6 +60,7 @@ describe("Stakenet", function () {
 
     const [stakenetOwner, otherAccount] = await ethers.getSigners();
 
+    await limeSpark.connect(stakenetOwner).mintInitial();
     await limeSpark.connect(otherAccount).mintInitial();
     await limeSpark
       .connect(otherAccount)
@@ -261,7 +264,6 @@ describe("Stakenet", function () {
 
         const stakenetAddress = await stakenet.getAddress();
 
-        await limeSpark.connect(stakenetOwner).mintInitial();
         await limeSpark
           .connect(stakenetOwner)
           .approve(stakenetAddress, ethers.parseUnits("100", 18));
@@ -294,7 +296,6 @@ describe("Stakenet", function () {
 
         const stakenetAddress = await stakenet.getAddress();
 
-        await limeSpark.connect(stakenetOwner).mintInitial();
         await limeSpark
           .connect(stakenetOwner)
           .approve(stakenetAddress, ethers.parseUnits("100", 18));
@@ -340,9 +341,10 @@ describe("Stakenet", function () {
         const { stakenet, limeSpark, stakenetOwner, otherAccount } =
           await loadFixture(deployFixtureWithStakenetApproval);
 
-        await limeSpark
-          .connect(stakenetOwner)
-          .mint(await stakenet.getAddress(), ethers.parseUnits("100", 18));
+        await limeSpark.transfer(
+          await stakenet.getAddress(),
+          ethers.parseUnits("100", 18),
+        );
 
         expect(await limeSpark.balanceOf(stakenet.getAddress())).to.be.equal(
           ethers.parseUnits("100", 18),
