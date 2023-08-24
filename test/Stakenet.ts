@@ -322,7 +322,7 @@ describe("Stakenet", function () {
     it("Should return the correct yield decimals", async () => {
       const { stakenet } = await loadFixture(deployFixture);
 
-      expect(await stakenet.yieldDecimals()).to.be.equal(2);
+      expect(await stakenet.yieldDecimals()).to.be.equal(4);
     });
   });
 

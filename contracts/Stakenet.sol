@@ -15,7 +15,7 @@ contract Stakenet is ERC20, ERC20Burnable {
     ERC20 public erc20;
 
     uint256 public immutable lockDurationInSeconds;
-    uint16 public immutable yieldPercentage;
+    uint32 public immutable yieldPercentage;
 
     mapping(address => bool) public userHasStaked;
     mapping(address => uint256) public userStakedTimestamp;
@@ -39,7 +39,7 @@ contract Stakenet is ERC20, ERC20Burnable {
     constructor(
         address erc20TokenAddress,
         uint256 _lockDurationInSeconds,
-        uint16 _yieldPercentage
+        uint32 _yieldPercentage
     ) ERC20("StakedLimeSpark", "SLSK") {
         erc20 = ERC20(erc20TokenAddress);
         lockDurationInSeconds = _lockDurationInSeconds;
@@ -80,14 +80,14 @@ contract Stakenet is ERC20, ERC20Burnable {
     }
 
     function yieldDecimals() external pure returns (uint8) {
-        return 2;
+        return 4;
     }
 
     function calculateYield(
         uint256 tokens
     ) internal view returns (uint256 accumulatedYield) {
         accumulatedYield =
-            (SafeMath.mul(tokens, 100_00 + yieldPercentage) / 100_00) -
+            (SafeMath.mul(tokens, 100_0000 + yieldPercentage) / 100_0000) -
             tokens;
     }
 }
