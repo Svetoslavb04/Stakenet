@@ -50,7 +50,7 @@ contract Stakenet is ERC20, ERC20Burnable {
         uint256 _rewards,
         uint256 _contractStakeLimit,
         uint256 _userStakeLimit
-    ) ERC20("StakedLimeSpark", "SLSK") {
+    ) ERC20("StakedToken", "STKN") {
         erc20 = ERC20(erc20TokenAddress);
 
         lockDurationInSeconds = _lockDurationInSeconds;

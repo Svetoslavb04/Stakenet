@@ -84,8 +84,8 @@ describe("Stakenet", function () {
         const userStakeLimit = await stakenet.userStakeLimit();
         const yieldPercentage = await stakenet.yieldPercentage();
 
-        expect(name).to.be.equal("StakedLimeSpark");
-        expect(symbol).to.be.equal("SLSK");
+        expect(name).to.be.equal("StakedToken");
+        expect(symbol).to.be.equal("STKN");
         expect(rewards).to.be.equal(ethers.parseEther("100"));
         expect(contractStakeLimit).to.be.equal(ethers.parseUnits("1", 21));
         expect(userStakeLimit).to.be.equal(ethers.parseUnits("1", 19));
