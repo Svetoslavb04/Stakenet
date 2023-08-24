@@ -73,10 +73,12 @@ contract Stakenet is ERC20, ERC20Burnable {
     }
 
     function stake(uint256 _amount) external hasNotStaked {
-        erc20.transferFrom(msg.sender, address(this), _amount);
         _mint(msg.sender, _amount);
+
         userHasStaked[msg.sender] = true;
         userStakedTimestamp[msg.sender] = block.timestamp;
+
+        erc20.transferFrom(msg.sender, address(this), _amount);
     }
 
     function transferPosition(address _to) external hasStaked {

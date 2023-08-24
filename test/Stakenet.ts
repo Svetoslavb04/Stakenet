@@ -10,13 +10,15 @@ describe("Stakenet", function () {
   async function deployFixture() {
     const oneDayInSeconds = 86_000;
 
+    const [stakenetOwner, otherAccount] = await ethers.getSigners();
+
     const LimeSpark = await ethers.getContractFactory("LimeSpark");
-    const limeSpark = await LimeSpark.deploy(ethers.parseUnits("100", 18));
+    const limeSpark = await LimeSpark.deploy(ethers.parseEther("100"));
 
     await limeSpark.waitForDeployment();
 
     const Stakenet = await ethers.getContractFactory("Stakenet");
-    const stakenet = await Stakenet.deploy(
+    const stakenet = await Stakenet.connect(stakenetOwner).deploy(
       await limeSpark.getAddress(),
       oneDayInSeconds,
       ethers.parseEther("100"),
@@ -25,8 +27,6 @@ describe("Stakenet", function () {
     );
 
     await stakenet.waitForDeployment();
-
-    const [stakenetOwner, otherAccount] = await ethers.getSigners();
 
     return {
       stakenet,
@@ -74,24 +74,32 @@ describe("Stakenet", function () {
 
   describe("Deployment", () => {
     describe("Action", () => {
-      it("Should deploy with correct name, symbol and starterTokens", async () => {
+      it("Should deploy with correct name, symbol, rewards, contractStakeLimit, userStakeLimit, Yield percentage", async () => {
         const { stakenet } = await loadFixture(deployFixture);
 
         const name = await stakenet.name();
         const symbol = await stakenet.symbol();
-        const _yieldPercentage = await stakenet.yieldPercentage();
+        const rewards = await stakenet.rewards();
+        const contractStakeLimit = await stakenet.contractStakeLimit();
+        const userStakeLimit = await stakenet.userStakeLimit();
+        const yieldPercentage = await stakenet.yieldPercentage();
 
         expect(name).to.be.equal("StakedLimeSpark");
         expect(symbol).to.be.equal("SLSK");
-        expect(_yieldPercentage).to.be.equal(10_0000n);
+        expect(rewards).to.be.equal(ethers.parseEther("100"));
+        expect(contractStakeLimit).to.be.equal(ethers.parseUnits("1", 21));
+        expect(userStakeLimit).to.be.equal(ethers.parseUnits("1", 19));
+        expect(yieldPercentage).to.be.equal(10_0000n);
       });
 
-      it("Should deploy LimeStart contract with correct starter tokens", async () => {
-        const { limeSpark } = await loadFixture(deployFixture);
+      it("Should transfer rewards on deployment", async () => {
+        const { stakenet, limeSpark } = await loadFixture(deployFixture);
 
-        const starterTokens = await limeSpark.starterTokens();
+        const stakenetBalance = await limeSpark.balanceOf(
+          stakenet.getAddress(),
+        );
 
-        expect(starterTokens).to.be.equal(ethers.parseUnits("100", 18));
+        expect(stakenetBalance).to.be.equal(ethers.parseEther("100"));
       });
     });
 
