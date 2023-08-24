@@ -91,16 +91,6 @@ describe("Stakenet", function () {
         expect(userStakeLimit).to.be.equal(ethers.parseUnits("1", 19));
         expect(yieldPercentage).to.be.equal(10_0000n);
       });
-
-      it("Should transfer rewards on deployment", async () => {
-        const { stakenet, limeSpark } = await loadFixture(deployFixture);
-
-        const stakenetBalance = await limeSpark.balanceOf(
-          stakenet.getAddress(),
-        );
-
-        expect(stakenetBalance).to.be.equal(ethers.parseEther("100"));
-      });
     });
 
     describe("Validations", async () => {

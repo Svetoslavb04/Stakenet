@@ -104,9 +104,11 @@ contract Stakenet is ERC20, ERC20Burnable {
             balanceOf(msg.sender)
         );
 
-        erc20.transfer(msg.sender, (balanceOf(msg.sender) + accumulatedYield));
+        uint256 stakedTokens = balanceOf(msg.sender);
 
-        _burn(msg.sender, balanceOf(msg.sender));
+        _burn(msg.sender, stakedTokens);
+
+        erc20.transfer(msg.sender, stakedTokens + accumulatedYield);
     }
 
     function yieldDecimals() external pure returns (uint8) {
