@@ -194,6 +194,10 @@ contract Stakenet is ERC20, ERC20Burnable {
         rewards -= accumulatedYield;
         contractStakeLimit = calculateContractStakeLimit();
 
+        if (contractStakeLimit < userStakeLimit) {
+            userStakeLimit = contractStakeLimit;
+        }
+
         erc20.transfer(msg.sender, stakedTokens + accumulatedYield);
 
         emit StakeLimitsUpdated(contractStakeLimit, userStakeLimit);
@@ -208,7 +212,7 @@ contract Stakenet is ERC20, ERC20Burnable {
 
     /// @dev Calculate the minimum stake allowed based on yield percentage.
     function calculateMinStake() public view returns (uint256) {
-        return 100_0000 / yieldPercentage;
+        return (100_0000 / yieldPercentage) + 1;
     }
 
     ///Internal functions:

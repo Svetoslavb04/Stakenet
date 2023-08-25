@@ -452,6 +452,70 @@ describe("Stakenet", function () {
         expect(newContractLimit).to.equal(ethers.parseEther("990"));
         expect(yieldPercentage).to.equal(10_0000n);
       });
+
+      it("Should update user limit if higher than the contract limit", async () => {
+        const oneDayInSeconds = 86_000;
+
+        const LimeSpark = await ethers.getContractFactory("LimeSpark");
+        const limeSpark = await LimeSpark.deploy(ethers.parseEther("200"));
+
+        await limeSpark.waitForDeployment();
+
+        const Stakenet = await ethers.getContractFactory("Stakenet");
+        const stakenet = await Stakenet.deploy(
+          await limeSpark.getAddress(),
+          oneDayInSeconds,
+          ethers.parseEther("100"),
+          ethers.parseUnits("333333", 15),
+          ethers.parseEther("200"),
+        );
+
+        await stakenet.waitForDeployment();
+
+        const [account1, account2, account3, account4] =
+          await ethers.getSigners();
+
+        await limeSpark.connect(account1).mintInitial();
+        await limeSpark
+          .connect(account1)
+          .approve(await stakenet.getAddress(), ethers.parseEther("200"));
+
+        await limeSpark.connect(account2).mintInitial();
+        await limeSpark
+          .connect(account2)
+          .approve(await stakenet.getAddress(), ethers.parseEther("200"));
+
+        await limeSpark.connect(account3).mintInitial();
+        await limeSpark
+          .connect(account3)
+          .approve(await stakenet.getAddress(), ethers.parseEther("200"));
+
+        await limeSpark.connect(account4).mintInitial();
+        await limeSpark
+          .connect(account4)
+          .approve(await stakenet.getAddress(), ethers.parseEther("200"));
+
+        await limeSpark.transfer(
+          await stakenet.getAddress(),
+          ethers.parseEther("100"),
+        );
+
+        await stakenet.connect(account2).stake(ethers.parseEther("200"));
+        await stakenet.connect(account3).stake(ethers.parseEther("200"));
+
+        await mine(2, { interval: oneDayInSeconds });
+
+        await stakenet.connect(account2).withdraw();
+        expect(await stakenet.rewards()).to.be.equal(
+          ethers.parseUnits("40", 18),
+        );
+        expect(await stakenet.contractStakeLimit()).to.be.equal(
+          "133333333333333333333",
+        );
+        expect(await stakenet.userStakeLimit()).to.be.equal(
+          await stakenet.contractStakeLimit(),
+        );
+      });
     });
 
     describe("Validation", () => {
