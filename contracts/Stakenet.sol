@@ -11,6 +11,8 @@ import { SafeMath } from "@openzeppelin/contracts/utils/math/SafeMath.sol";
 /// @dev The contract that allows staking and yield farming.
 /// @dev The staking position is represented an ERC20 token
 contract Stakenet is ERC20, ERC20Burnable {
+    /// Errors:
+
     /// @dev Error indicating that an account has already staked tokens. Account can stake only once.
     error AccountHasAlreadyStaked();
 
@@ -31,6 +33,26 @@ contract Stakenet is ERC20, ERC20Burnable {
 
     /// @dev Error indicating that a staking amount is too low and the user will not receive a reward.
     error StakeTooLow(uint256 minimumStake);
+
+    /// Events:
+
+    /// @dev Event emitted when an account successfully stakes tokens.
+    event Staked(address indexed account, uint256 amount);
+
+    /// @dev Event emitted when an account transfers their staking position.
+    event PositionTransferred(
+        address indexed from,
+        address indexed to,
+        uint256 amount
+    );
+
+    /// @dev Event emitted when an account successfully withdraws staked tokens and yield.
+    event Withdrawn(address indexed account, uint256 amount);
+
+    /// @dev Event emitted when the contract's stake limits are updated.
+    event StakeLimitsUpdated(uint256 newContractLimit, uint256 newUserLimit);
+
+    /// Global state variables:
 
     /// @dev The ERC20 token contract used for staking.
     ERC20 public erc20;
@@ -58,6 +80,8 @@ contract Stakenet is ERC20, ERC20Burnable {
 
     /// @dev Mapping to store the staked timestamp for each user.
     mapping(address => uint256) public userStakedTimestamp;
+
+    /// Modifiers:
 
     /// @dev Modifier to ensure that an account has not staked tokens.
     modifier hasNotStaked() {
@@ -113,6 +137,8 @@ contract Stakenet is ERC20, ERC20Burnable {
         userMinimumStake = calculateMinStake();
     }
 
+    /// Functions:
+
     /// @dev Stake a specified amount of tokens to start yield farming.
     /// @param _amount The amount of tokens to stake.
     function stake(uint256 _amount) external hasNotStaked {
@@ -129,6 +155,8 @@ contract Stakenet is ERC20, ERC20Burnable {
         userStakedTimestamp[msg.sender] = block.timestamp;
 
         erc20.transferFrom(msg.sender, address(this), _amount);
+
+        emit Staked(msg.sender, _amount);
     }
 
     /// @dev Transfer staking position to another address.
@@ -140,6 +168,8 @@ contract Stakenet is ERC20, ERC20Burnable {
         );
 
         _transfer(msg.sender, _to, balanceOf(msg.sender));
+
+        emit PositionTransferred(msg.sender, _to, balanceOf(msg.sender));
     }
 
     /// @dev Withdraw staked tokens along with accumulated yield after the lock duration.
@@ -165,6 +195,9 @@ contract Stakenet is ERC20, ERC20Burnable {
         contractStakeLimit = calculateContractStakeLimit();
 
         erc20.transfer(msg.sender, stakedTokens + accumulatedYield);
+
+        emit StakeLimitsUpdated(contractStakeLimit, userStakeLimit);
+        emit Withdrawn(msg.sender, stakedTokens + accumulatedYield);
     }
 
     /// @dev Get the number of decimal places for the yield percentage.
@@ -172,6 +205,13 @@ contract Stakenet is ERC20, ERC20Burnable {
     function yieldDecimals() external pure returns (uint8) {
         return 4;
     }
+
+    /// @dev Calculate the minimum stake allowed based on yield percentage.
+    function calculateMinStake() public view returns (uint256) {
+        return 100_0000 / yieldPercentage;
+    }
+
+    ///Internal functions:
 
     /// @dev Calculate the yield percentage based on rewards and stake limits.
     function calculateYield() internal view returns (uint24) {
@@ -187,11 +227,6 @@ contract Stakenet is ERC20, ERC20Burnable {
     /// @dev Calculate the contract's stake limit based on rewards and yield percentage.
     function calculateContractStakeLimit() internal view returns (uint256) {
         return (rewards * 100_0000) / yieldPercentage;
-    }
-
-    /// @dev Calculate the minimum stake allowed based on yield percentage.
-    function calculateMinStake() public view returns (uint256) {
-        return 100_0000 / yieldPercentage;
     }
 
     /// @dev Calculate the accumulated yield for a specified number of tokens.
