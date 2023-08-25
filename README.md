@@ -65,8 +65,8 @@ This project is licensed under the MIT License.
 
 This smart contract is provided as-is and has not been audited for security. Use it at your own risk.
 
-LimeSpark Contract address: 0xD650c3BAF8Bf45c98Fcd2fEc4bE46Aa374cD3cE3\
-LimeSpark Contract link: https://sepolia.etherscan.io/address/0xD650c3BAF8Bf45c98Fcd2fEc4bE46Aa374cD3cE3#code\
+LimeSpark Contract address: 0xF246a25528178F7eB4f91c2A6f19009de609443f\
+LimeSpark Contract link: https://sepolia.etherscan.io/address/0xF246a25528178F7eB4f91c2A6f19009de609443f#code
 
-Stakenet Contract address: \
-Stakenet Contract link:
+Stakenet Contract address: 0x6f0fBd20Ea72F6c50D9229d433b51CAd4590ec77\
+Stakenet Contract link: https://sepolia.etherscan.io/address/0x6f0fBd20Ea72F6c50D9229d433b51CAd4590ec77#code
