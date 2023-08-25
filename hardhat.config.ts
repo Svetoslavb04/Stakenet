@@ -9,6 +9,14 @@ const lazyImport = async (module: any) => {
 };
 
 task(
+  "deploy-lime-spark",
+  "Deploys Stakenet by passing erc20 token address",
+).setAction(async () => {
+  const { main } = await lazyImport("./scripts/deploy-lime-spark.ts");
+  await main();
+});
+
+task(
   "deploy-stakenet-with-erc20",
   "Deploys Stakenet by passing erc20 token address",
 )

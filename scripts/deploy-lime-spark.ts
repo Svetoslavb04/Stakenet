@@ -1,6 +1,6 @@
 import { ethers } from "hardhat";
 
-async function main() {
+export async function main() {
   const LimeSpark = "LimeSpark";
 
   const limeSpark = await ethers.deployContract(LimeSpark, [
@@ -22,7 +22,3 @@ async function main() {
     )} LimeSparks`,
   );
 }
-
-main().catch((error) => {
-  console.error(error);
-});
