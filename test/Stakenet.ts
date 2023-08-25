@@ -271,6 +271,20 @@ describe("Stakenet", function () {
         ).to.revertedWithCustomError(stakenet, "StakeTooLow");
       });
     });
+
+    describe("Events", () => {
+      it("Should emit Staked event on staking tokens", async () => {
+        const { stakenet, otherAccount } = await loadFixture(
+          deployFixtureWithStakenetApproval,
+        );
+
+        const stake = ethers.parseEther("10");
+
+        await expect(stakenet.connect(otherAccount).stake(stake))
+          .to.emit(stakenet, "Staked")
+          .withArgs(otherAccount.address, stake);
+      });
+    });
   });
 
   describe("TransferPosition", () => {
@@ -358,6 +372,24 @@ describe("Stakenet", function () {
         ).to.revertedWithCustomError(stakenet, "AccountHasNotStaked");
       });
     });
+
+    describe("Events", () => {
+      it("Should emit PositionTransferred event on transfering position", async () => {
+        const { stakenet, stakenetOwner, otherAccount } = await loadFixture(
+          deployFixtureWithStakenetApproval,
+        );
+
+        const stake = ethers.parseEther("10");
+
+        await stakenet.connect(otherAccount).stake(stake);
+
+        await expect(
+          stakenet.connect(otherAccount).transferPosition(stakenetOwner),
+        )
+          .to.emit(stakenet, "PositionTransferred")
+          .withArgs(otherAccount.address, stakenetOwner.address, stake);
+      });
+    });
   });
 
   describe("Withdraw", () => {
@@ -443,6 +475,46 @@ describe("Stakenet", function () {
         await expect(
           stakenet.connect(otherAccount).withdraw(),
         ).to.revertedWithCustomError(stakenet, "AccountHasNotStaked");
+      });
+    });
+
+    describe("Events", () => {
+      it("Should emit StakeLimitsUpdated event on withdrawing tokens", async () => {
+        const { stakenet, limeSpark, otherAccount } = await loadFixture(
+          deployFixtureWithStakenetApproval,
+        );
+
+        await limeSpark.transfer(
+          await stakenet.getAddress(),
+          ethers.parseEther("100"),
+        );
+
+        await stakenet.connect(otherAccount).stake(ethers.parseEther("10"));
+        const oneDay = 86_000;
+        await mine(2, { interval: oneDay });
+
+        await expect(stakenet.connect(otherAccount).withdraw())
+          .to.emit(stakenet, "StakeLimitsUpdated")
+          .withArgs(ethers.parseEther("990"), ethers.parseEther("100"));
+      });
+
+      it("Should emit Withdraw event on withdrawing tokens", async () => {
+        const { stakenet, limeSpark, otherAccount } = await loadFixture(
+          deployFixtureWithStakenetApproval,
+        );
+
+        await limeSpark.transfer(
+          await stakenet.getAddress(),
+          ethers.parseEther("100"),
+        );
+
+        await stakenet.connect(otherAccount).stake(ethers.parseEther("10"));
+        const oneDay = 86_000;
+        await mine(2, { interval: oneDay });
+
+        await expect(stakenet.connect(otherAccount).withdraw())
+          .to.emit(stakenet, "Withdrawn")
+          .withArgs(otherAccount.address, ethers.parseEther("11"));
       });
     });
   });
