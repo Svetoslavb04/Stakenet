@@ -22,13 +22,13 @@ The Stakenet Smart Contract is an Ethereum-based contract that allows users to s
 1. Clone the repository:
 
    ```bash
-   git clone https:  //github.com/your-username/stakenet-smart-contract.git
+   git clone https://github.com/Svetoslavb04/Stakenet.git
    ```
 
 2. Navigate to the project directory:
 
    ```bash
-   cd stakenet-smart-contract
+   cd Stakenet
    ```
 
 3. Setup environment variables
@@ -43,13 +43,19 @@ The Stakenet Smart Contract is an Ethereum-based contract that allows users to s
    npx hardhat compile
    ```
 
-5. Deploy the smart contract to a local Hardhat network:
+5. Deploy the LimeSpark smart contract to Sepolia testnet:
 
    ```bash
-   npx hardhat run scripts/deploy.ts --network localhost
+   npx hardhat deploy-lime-spark --network sepolia
    ```
 
-Run `npx hardhat help` to see all available commands
+6. Deploy the Stakenet smart contract to Sepolia testnet:
+
+   ```bash
+   npx hardhat deploy-stakenet-with-erc20 --network sepolia --erc20-token-address <ADDRESS_OF_ERC20_TOKEN>
+   ```
+
+   Run `npx hardhat help` to see all available commands
 
 ## License
 
