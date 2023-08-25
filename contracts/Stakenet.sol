@@ -21,6 +21,9 @@ contract Stakenet is ERC20 {
     /// @dev Error indicating that staked tokens are not yet unlocked.
     error TokensNotUnlockedYet(uint256 unlockTime);
 
+    /// @dev Error indicating that staked tokens are not yet unlocked.
+    error AmountLessThanPosition(uint256 amount, uint256 position);
+
     /// @dev Error indicating an invalid stake limit configuration.
     error InvalidStakeLimit();
 
@@ -83,8 +86,9 @@ contract Stakenet is ERC20 {
     /// Modifiers:
 
     /// @dev Modifier to ensure that an account has not staked tokens.
-    modifier hasNotStaked() {
-        if (userHasStaked[msg.sender]) {
+    /// @param user The user that should have not staked
+    modifier hasNotStaked(address user) {
+        if (userHasStaked[user]) {
             revert AccountHasAlreadyStaked();
         }
 
@@ -92,11 +96,24 @@ contract Stakenet is ERC20 {
     }
 
     /// @dev Modifier to ensure that an account has staked tokens.
-    modifier hasStaked() {
-        if (!userHasStaked[msg.sender]) {
+    /// @param user The user that should have staked
+    modifier hasStaked(address user) {
+        if (!userHasStaked[user]) {
             revert AccountHasNotStaked();
         }
 
+        _;
+    }
+
+    /// @dev Modifier to ensure that amount is not less than the position.
+    /// @param user The user that should have staked
+    /// @param amount The amount that will be compared
+    modifier amountEqualToPosition(address user, uint256 amount) {
+        uint256 balance = balanceOf(user);
+
+        if (amount < balanceOf(user)) {
+            revert AmountLessThanPosition(amount, balance);
+        }
         _;
     }
 
@@ -140,7 +157,7 @@ contract Stakenet is ERC20 {
 
     /// @dev Stake a specified amount of tokens to start yield farming.
     /// @param _amount The amount of tokens to stake.
-    function stake(uint256 _amount) external hasNotStaked {
+    function stake(uint256 _amount) external hasNotStaked(_msgSender()) {
         if (contractStakeLimit < _amount || userStakeLimit < _amount) {
             revert StakeTooHigh(userStakeLimit, contractStakeLimit);
         }
@@ -172,19 +189,73 @@ contract Stakenet is ERC20 {
 
     /// @dev Transfer staking position to another address.
     /// @param _to The address to which the staking position will be transferred.
-    function transferPosition(address _to) external hasStaked {
+    /// @param _amount Should be equal to the position of the user
+    function transfer(
+        address _to,
+        uint256 _amount
+    )
+        public
+        override
+        hasStaked(_msgSender())
+        amountEqualToPosition(_msgSender(), _amount)
+        returns (bool)
+    {
+        address owner = _msgSender();
+
         userStakedTimestamp[_to] = Math.max(
             userStakedTimestamp[_to],
             userStakedTimestamp[msg.sender]
         );
 
-        _transfer(msg.sender, _to, balanceOf(msg.sender));
+        _transfer(owner, _to, _amount);
 
         emit PositionTransferred(msg.sender, _to, balanceOf(_to));
+
+        return true;
+    }
+
+    function approve(
+        address spender,
+        uint256 amount
+    )
+        public
+        override
+        hasStaked(_msgSender())
+        amountEqualToPosition(_msgSender(), amount)
+        returns (bool)
+    {
+        _approve(_msgSender(), spender, amount);
+        return true;
+    }
+
+    function transferFrom(
+        address _from,
+        address _to,
+        uint256 _amount
+    )
+        public
+        override
+        hasStaked(_from)
+        amountEqualToPosition(_from, _amount)
+        returns (bool)
+    {
+        address spender = _msgSender();
+
+        userStakedTimestamp[_to] = Math.max(
+            userStakedTimestamp[_to],
+            userStakedTimestamp[_from]
+        );
+
+        _spendAllowance(_from, spender, _amount);
+        _transfer(_from, _to, _amount);
+
+        emit PositionTransferred(_from, _to, balanceOf(_to));
+
+        return true;
     }
 
     /// @dev Withdraw staked tokens along with accumulated yield after the lock duration.
-    function withdraw() external hasStaked {
+    function withdraw() external hasStaked(_msgSender()) {
         if (
             block.timestamp <=
             userStakedTimestamp[msg.sender] + lockDurationInSeconds
