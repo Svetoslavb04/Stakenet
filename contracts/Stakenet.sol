@@ -195,7 +195,6 @@ contract Stakenet is ERC20 {
         uint256 _amount
     )
         public
-        virtual
         override
         hasStaked(_msgSender())
         amountEqualToPosition(_msgSender(), _amount)
@@ -220,7 +219,6 @@ contract Stakenet is ERC20 {
         uint256 amount
     )
         public
-        virtual
         override
         hasStaked(_msgSender())
         amountEqualToPosition(_msgSender(), amount)
@@ -236,7 +234,6 @@ contract Stakenet is ERC20 {
         uint256 _amount
     )
         public
-        virtual
         override
         hasStaked(_from)
         amountEqualToPosition(_from, _amount)
