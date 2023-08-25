@@ -1,8 +1,24 @@
 import { config as dotEnvConfig } from "dotenv";
-import { HardhatUserConfig } from "hardhat/config";
+import { HardhatUserConfig, task } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 
 dotEnvConfig();
+
+const lazyImport = async (module: any) => {
+  return await import(module);
+};
+
+task(
+  "deploy-stakenet-with-erc20",
+  "Deploys Stakenet by passing erc20 token address",
+)
+  .addParam("erc20TokenAddress", "Please provide ERC20 token address")
+  .setAction(async ({ erc20TokenAddress }) => {
+    const { main } = await lazyImport(
+      "./scripts/deploy-stakenet-with-erc20.ts",
+    );
+    await main(erc20TokenAddress);
+  });
 
 const config: HardhatUserConfig = {
   networks: {
