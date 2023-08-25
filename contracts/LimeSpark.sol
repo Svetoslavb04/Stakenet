@@ -10,6 +10,9 @@ contract LimeSpark is ERC20, Ownable {
     /// @dev Error indicating that the initial tokens have already been minted for an account.
     error TokensAlreadyMinted();
 
+    /// @dev Emitted when an account successfully mints initial starter tokens.
+    event InitialMint(address indexed account, uint256 amount);
+
     /// @dev Total number of tokens that will be able for a user to mint initially.
     uint256 public immutable starterTokens;
 
@@ -37,6 +40,8 @@ contract LimeSpark is ERC20, Ownable {
     function mintInitial() external starterTokensNotMinted(msg.sender) {
         accountHaveMinted[msg.sender] = true;
         _mint(msg.sender, starterTokens);
+
+        emit InitialMint(msg.sender, starterTokens);
     }
 
     /// @dev Mints a specified amount of tokens to the given address.
