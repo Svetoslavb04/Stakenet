@@ -169,7 +169,7 @@ contract Stakenet is ERC20, ERC20Burnable {
 
         _transfer(msg.sender, _to, balanceOf(msg.sender));
 
-        emit PositionTransferred(msg.sender, _to, balanceOf(msg.sender));
+        emit PositionTransferred(msg.sender, _to, balanceOf(_to));
     }
 
     /// @dev Withdraw staked tokens along with accumulated yield after the lock duration.
