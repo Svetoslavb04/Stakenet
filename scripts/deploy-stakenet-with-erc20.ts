@@ -5,7 +5,7 @@ export async function main(erc20TokenAddress: string) {
 
   const lockDurationInSeconds = 86_000;
   const rewards = ethers.parseEther("100");
-  const contractStakeLimit = ethers.parseEther("1000");
+  const contractStakeLimit = ethers.parseEther("10000");
   const userStakeLimit = ethers.parseEther("10");
 
   const stakenet = await ethers.deployContract(Stakenet, [
