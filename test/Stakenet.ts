@@ -562,6 +562,8 @@ describe("Stakenet", function () {
         expect(await limeSpark.balanceOf(otherAccount)).to.be.equal(
           ethers.parseEther("100") + accumulatedYield,
         );
+
+        expect(await stakenet.balanceOf(otherAccount)).to.be.equal(0);
       });
 
       it("Should update rewards and contract stake limit while yield should stay the same", async () => {
