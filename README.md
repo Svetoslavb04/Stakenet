@@ -52,7 +52,7 @@ The Stakenet Smart Contract is an Ethereum-based contract that allows users to s
 6. Deploy the Stakenet smart contract to Sepolia testnet:
 
    ```bash
-   npx hardhat deploy-stakenet-with-erc20 --network sepolia --erc20-token-address <ADDRESS_OF_ERC20_TOKEN>
+   npx hardhat deploy-stakenet-with-erc20 --network sepolia --erc20-token-address <ADDRESS_OF_ERC20>
    ```
 
    Run `npx hardhat help` to see all available commands
