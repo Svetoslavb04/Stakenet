@@ -2,7 +2,6 @@
 pragma solidity 0.8.19;
 
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { ERC20Burnable } from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 
 import { Math } from "@openzeppelin/contracts/utils/math/Math.sol";
 import { SafeMath } from "@openzeppelin/contracts/utils/math/SafeMath.sol";
@@ -10,7 +9,7 @@ import { SafeMath } from "@openzeppelin/contracts/utils/math/SafeMath.sol";
 /// @title Stakenet Smart Contract
 /// @dev The contract that allows staking and yield farming.
 /// @dev The staking position is represented an ERC20 token
-contract Stakenet is ERC20, ERC20Burnable {
+contract Stakenet is ERC20 {
     /// Errors:
 
     /// @dev Error indicating that an account has already staked tokens. Account can stake only once.
