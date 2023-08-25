@@ -270,6 +270,124 @@ describe("Stakenet", function () {
           stakenet.connect(otherAccount).stake(2),
         ).to.revertedWithCustomError(stakenet, "StakeTooLow");
       });
+
+      it("Should update user limit if higher than the contract limit", async () => {
+        const oneDayInSeconds = 86_000;
+
+        const LimeSpark = await ethers.getContractFactory("LimeSpark");
+        const limeSpark = await LimeSpark.deploy(ethers.parseEther("200"));
+
+        await limeSpark.waitForDeployment();
+
+        const Stakenet = await ethers.getContractFactory("Stakenet");
+        const stakenet = await Stakenet.deploy(
+          await limeSpark.getAddress(),
+          oneDayInSeconds,
+          ethers.parseEther("100"),
+          ethers.parseUnits("333333", 15),
+          ethers.parseEther("200"),
+        );
+
+        await stakenet.waitForDeployment();
+
+        const [account1, account2, account3, account4] =
+          await ethers.getSigners();
+
+        await limeSpark.connect(account1).mintInitial();
+        await limeSpark
+          .connect(account1)
+          .approve(await stakenet.getAddress(), ethers.parseEther("200"));
+
+        await limeSpark.connect(account2).mintInitial();
+        await limeSpark
+          .connect(account2)
+          .approve(await stakenet.getAddress(), ethers.parseEther("200"));
+
+        await limeSpark.connect(account3).mintInitial();
+        await limeSpark
+          .connect(account3)
+          .approve(await stakenet.getAddress(), ethers.parseEther("200"));
+
+        await limeSpark.connect(account4).mintInitial();
+        await limeSpark
+          .connect(account4)
+          .approve(await stakenet.getAddress(), ethers.parseEther("200"));
+
+        await limeSpark.transfer(
+          await stakenet.getAddress(),
+          ethers.parseEther("100"),
+        );
+
+        await stakenet.connect(account2).stake(ethers.parseEther("200"));
+
+        expect(await stakenet.rewards()).to.be.equal(
+          ethers.parseUnits("40", 18),
+        );
+        expect(await stakenet.contractStakeLimit()).to.be.equal(
+          "133333333333333333333",
+        );
+        expect(await stakenet.userStakeLimit()).to.be.equal(
+          await stakenet.contractStakeLimit(),
+        );
+      });
+
+      it("Should revert if no potential rewards left", async () => {
+        const oneDayInSeconds = 86_000;
+
+        const LimeSpark = await ethers.getContractFactory("LimeSpark");
+        const limeSpark = await LimeSpark.deploy(ethers.parseEther("100"));
+
+        await limeSpark.waitForDeployment();
+
+        const Stakenet = await ethers.getContractFactory("Stakenet");
+        const stakenet = await Stakenet.deploy(
+          await limeSpark.getAddress(),
+          oneDayInSeconds,
+          ethers.parseEther("100"),
+          ethers.parseEther("400"),
+          ethers.parseEther("100"),
+        );
+
+        await stakenet.waitForDeployment();
+
+        expect(await stakenet.yieldPercentage()).to.be.equal(25_0000);
+
+        const [account1, account2, account3, account4, account5] =
+          await ethers.getSigners();
+
+        await limeSpark.connect(account1).mintInitial();
+        await limeSpark
+          .connect(account1)
+          .approve(await stakenet.getAddress(), ethers.parseEther("100"));
+
+        await limeSpark.connect(account2).mintInitial();
+        await limeSpark
+          .connect(account2)
+          .approve(await stakenet.getAddress(), ethers.parseEther("100"));
+
+        await limeSpark.connect(account3).mintInitial();
+        await limeSpark
+          .connect(account3)
+          .approve(await stakenet.getAddress(), ethers.parseEther("100"));
+
+        await limeSpark.connect(account4).mintInitial();
+        await limeSpark
+          .connect(account4)
+          .approve(await stakenet.getAddress(), ethers.parseEther("100"));
+
+        await limeSpark.connect(account5).mintInitial();
+        await limeSpark
+          .connect(account5)
+          .approve(await stakenet.getAddress(), ethers.parseEther("100"));
+
+        await stakenet.connect(account1).stake(ethers.parseEther("100"));
+        await stakenet.connect(account2).stake(ethers.parseEther("100"));
+        await stakenet.connect(account3).stake(ethers.parseEther("100"));
+        await stakenet.connect(account4).stake(ethers.parseEther("100"));
+
+        await expect(stakenet.connect(account5).stake(ethers.parseEther("100")))
+          .to.be.reverted;
+      });
     });
 
     describe("Events", () => {
@@ -283,6 +401,23 @@ describe("Stakenet", function () {
         await expect(stakenet.connect(otherAccount).stake(stake))
           .to.emit(stakenet, "Staked")
           .withArgs(otherAccount.address, stake);
+      });
+
+      it("Should emit StakeLimitsUpdated event on withdrawing tokens", async () => {
+        const { stakenet, limeSpark, otherAccount } = await loadFixture(
+          deployFixtureWithStakenetApproval,
+        );
+
+        await limeSpark.transfer(
+          await stakenet.getAddress(),
+          ethers.parseEther("100"),
+        );
+
+        await expect(
+          stakenet.connect(otherAccount).stake(ethers.parseEther("10")),
+        )
+          .to.emit(stakenet, "StakeLimitsUpdated")
+          .withArgs(ethers.parseEther("990"), ethers.parseEther("100"));
       });
     });
   });
@@ -452,70 +587,6 @@ describe("Stakenet", function () {
         expect(newContractLimit).to.equal(ethers.parseEther("990"));
         expect(yieldPercentage).to.equal(10_0000n);
       });
-
-      it("Should update user limit if higher than the contract limit", async () => {
-        const oneDayInSeconds = 86_000;
-
-        const LimeSpark = await ethers.getContractFactory("LimeSpark");
-        const limeSpark = await LimeSpark.deploy(ethers.parseEther("200"));
-
-        await limeSpark.waitForDeployment();
-
-        const Stakenet = await ethers.getContractFactory("Stakenet");
-        const stakenet = await Stakenet.deploy(
-          await limeSpark.getAddress(),
-          oneDayInSeconds,
-          ethers.parseEther("100"),
-          ethers.parseUnits("333333", 15),
-          ethers.parseEther("200"),
-        );
-
-        await stakenet.waitForDeployment();
-
-        const [account1, account2, account3, account4] =
-          await ethers.getSigners();
-
-        await limeSpark.connect(account1).mintInitial();
-        await limeSpark
-          .connect(account1)
-          .approve(await stakenet.getAddress(), ethers.parseEther("200"));
-
-        await limeSpark.connect(account2).mintInitial();
-        await limeSpark
-          .connect(account2)
-          .approve(await stakenet.getAddress(), ethers.parseEther("200"));
-
-        await limeSpark.connect(account3).mintInitial();
-        await limeSpark
-          .connect(account3)
-          .approve(await stakenet.getAddress(), ethers.parseEther("200"));
-
-        await limeSpark.connect(account4).mintInitial();
-        await limeSpark
-          .connect(account4)
-          .approve(await stakenet.getAddress(), ethers.parseEther("200"));
-
-        await limeSpark.transfer(
-          await stakenet.getAddress(),
-          ethers.parseEther("100"),
-        );
-
-        await stakenet.connect(account2).stake(ethers.parseEther("200"));
-        await stakenet.connect(account3).stake(ethers.parseEther("200"));
-
-        await mine(2, { interval: oneDayInSeconds });
-
-        await stakenet.connect(account2).withdraw();
-        expect(await stakenet.rewards()).to.be.equal(
-          ethers.parseUnits("40", 18),
-        );
-        expect(await stakenet.contractStakeLimit()).to.be.equal(
-          "133333333333333333333",
-        );
-        expect(await stakenet.userStakeLimit()).to.be.equal(
-          await stakenet.contractStakeLimit(),
-        );
-      });
     });
 
     describe("Validation", () => {
@@ -543,25 +614,6 @@ describe("Stakenet", function () {
     });
 
     describe("Events", () => {
-      it("Should emit StakeLimitsUpdated event on withdrawing tokens", async () => {
-        const { stakenet, limeSpark, otherAccount } = await loadFixture(
-          deployFixtureWithStakenetApproval,
-        );
-
-        await limeSpark.transfer(
-          await stakenet.getAddress(),
-          ethers.parseEther("100"),
-        );
-
-        await stakenet.connect(otherAccount).stake(ethers.parseEther("10"));
-        const oneDay = 86_000;
-        await mine(2, { interval: oneDay });
-
-        await expect(stakenet.connect(otherAccount).withdraw())
-          .to.emit(stakenet, "StakeLimitsUpdated")
-          .withArgs(ethers.parseEther("990"), ethers.parseEther("100"));
-      });
-
       it("Should emit Withdraw event on withdrawing tokens", async () => {
         const { stakenet, limeSpark, otherAccount } = await loadFixture(
           deployFixtureWithStakenetApproval,

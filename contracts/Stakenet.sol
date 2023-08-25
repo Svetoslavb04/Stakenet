@@ -154,8 +154,20 @@ contract Stakenet is ERC20, ERC20Burnable {
         userHasStaked[msg.sender] = true;
         userStakedTimestamp[msg.sender] = block.timestamp;
 
+        uint256 accumulatedYield = calculateAccumulatedYield(
+            balanceOf(msg.sender)
+        );
+
+        rewards -= accumulatedYield;
+        contractStakeLimit = calculateContractStakeLimit();
+
+        if (contractStakeLimit < userStakeLimit) {
+            userStakeLimit = contractStakeLimit;
+        }
+
         erc20.transferFrom(msg.sender, address(this), _amount);
 
+        emit StakeLimitsUpdated(contractStakeLimit, userStakeLimit);
         emit Staked(msg.sender, _amount);
     }
 
@@ -191,16 +203,8 @@ contract Stakenet is ERC20, ERC20Burnable {
 
         _burn(msg.sender, stakedTokens);
 
-        rewards -= accumulatedYield;
-        contractStakeLimit = calculateContractStakeLimit();
-
-        if (contractStakeLimit < userStakeLimit) {
-            userStakeLimit = contractStakeLimit;
-        }
-
         erc20.transfer(msg.sender, stakedTokens + accumulatedYield);
 
-        emit StakeLimitsUpdated(contractStakeLimit, userStakeLimit);
         emit Withdrawn(msg.sender, stakedTokens + accumulatedYield);
     }
 
