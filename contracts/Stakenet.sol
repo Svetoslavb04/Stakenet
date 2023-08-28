@@ -41,13 +41,6 @@ contract Stakenet is ERC20 {
     /// @dev Event emitted when an account successfully stakes tokens.
     event Staked(address indexed account, uint256 amount);
 
-    /// @dev Event emitted when an account transfers their staking position.
-    event PositionTransferred(
-        address indexed from,
-        address indexed to,
-        uint256 amount
-    );
-
     /// @dev Event emitted when an account successfully withdraws staked tokens and yield.
     event Withdrawn(address indexed account, uint256 amount);
 
@@ -209,8 +202,6 @@ contract Stakenet is ERC20 {
 
         _transfer(owner, _to, _amount);
 
-        emit PositionTransferred(msg.sender, _to, balanceOf(_to));
-
         return true;
     }
 
@@ -248,8 +239,6 @@ contract Stakenet is ERC20 {
 
         _spendAllowance(_from, spender, _amount);
         _transfer(_from, _to, _amount);
-
-        emit PositionTransferred(_from, _to, balanceOf(_to));
 
         return true;
     }
