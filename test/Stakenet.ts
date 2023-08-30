@@ -667,7 +667,7 @@ describe("Stakenet", function () {
         await expect(
           stakenet.connect(otherAccount).transfer(stakenetOwner, stake),
         )
-          .to.emit(stakenet, "PositionTransferred")
+          .to.emit(stakenet, "Transfer")
           .withArgs(otherAccount.address, stakenetOwner.address, stake);
       });
     });
@@ -814,7 +814,7 @@ describe("Stakenet", function () {
         await stakenet.connect(otherAccount).approve(stakenetOwner, stake);
 
         await expect(stakenet.transferFrom(otherAccount, stakenetOwner, stake))
-          .to.emit(stakenet, "PositionTransferred")
+          .to.emit(stakenet, "Transfer")
           .withArgs(otherAccount.address, stakenetOwner.address, stake);
       });
     });
