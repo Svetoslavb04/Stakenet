@@ -50,7 +50,7 @@ contract Stakenet is ERC20 {
     /// Global state variables:
 
     /// @dev The ERC20 token contract used for staking.
-    ERC20 public erc20;
+    ERC20 public immutable erc20;
 
     /// @dev The duration for which staked tokens are locked.
     uint256 public immutable lockDurationInSeconds;
@@ -68,7 +68,7 @@ contract Stakenet is ERC20 {
     uint256 public userStakeLimit;
 
     /// @dev The minimum staking amount for a user based on yield percentage.
-    uint256 public userMinimumStake;
+    uint256 public immutable userMinimumStake;
 
     /// @dev Mapping to track whether an account has staked tokens.
     mapping(address => bool) public userHasStaked;
@@ -174,10 +174,10 @@ contract Stakenet is ERC20 {
             userStakeLimit = contractStakeLimit;
         }
 
-        erc20.transferFrom(msg.sender, address(this), _amount);
-
         emit StakeLimitsUpdated(contractStakeLimit, userStakeLimit);
         emit Staked(msg.sender, _amount);
+
+        erc20.transferFrom(msg.sender, address(this), _amount);
     }
 
     /// @dev Transfer staking position to another address.
@@ -262,9 +262,9 @@ contract Stakenet is ERC20 {
 
         _burn(msg.sender, stakedTokens);
 
-        erc20.transfer(msg.sender, stakedTokens + accumulatedYield);
-
         emit Withdrawn(msg.sender, stakedTokens + accumulatedYield);
+
+        erc20.transfer(msg.sender, stakedTokens + accumulatedYield);
     }
 
     /// @dev Get the number of decimal places for the yield percentage.
