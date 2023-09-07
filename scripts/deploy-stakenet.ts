@@ -1,12 +1,13 @@
 import { ethers } from "hardhat";
 
-export async function main(erc20TokenAddress: string) {
+export async function main(
+  erc20TokenAddress: string,
+  lockDurationInSeconds: number,
+  rewards: string,
+  contractStakeLimit: string,
+  userStakeLimit: string,
+) {
   const Stakenet = "Stakenet";
-
-  const lockDurationInSeconds = 86_000;
-  const rewards = ethers.parseEther("100");
-  const contractStakeLimit = ethers.parseEther("10000");
-  const userStakeLimit = ethers.parseEther("10");
 
   const stakenet = await ethers.deployContract(Stakenet, [
     erc20TokenAddress,

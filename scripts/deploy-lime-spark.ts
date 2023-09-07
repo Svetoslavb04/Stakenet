@@ -1,10 +1,10 @@
 import { ethers } from "hardhat";
 
-export async function main() {
+export async function main(starterTokens: string) {
   const LimeSpark = "LimeSpark";
 
   const limeSpark = await ethers.deployContract(LimeSpark, [
-    ethers.parseUnits("100", 18),
+    ethers.toBigInt(starterTokens),
   ]);
 
   await limeSpark.waitForDeployment();

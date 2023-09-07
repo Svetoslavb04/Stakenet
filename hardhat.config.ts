@@ -8,25 +8,49 @@ const lazyImport = async (module: any) => {
   return await import(module);
 };
 
-task(
-  "deploy-lime-spark",
-  "Deploys Stakenet by passing erc20 token address",
-).setAction(async () => {
-  const { main } = await lazyImport("./scripts/deploy-lime-spark.ts");
-  await main();
-});
-
-task(
-  "deploy-stakenet-with-erc20",
-  "Deploys Stakenet by passing erc20 token address",
-)
-  .addParam("erc20TokenAddress", "Please provide ERC20 token address")
-  .setAction(async ({ erc20TokenAddress }) => {
-    const { main } = await lazyImport(
-      "./scripts/deploy-stakenet-with-erc20.ts",
-    );
-    await main(erc20TokenAddress);
+task("deploy-lime-spark", "Deploys LimeSpark ERC20 Contract")
+  .addParam(
+    "starterTokens",
+    "Please provide starter tokens available for initial miniting",
+  )
+  .setAction(async ({ starterTokens }) => {
+    const { main } = await lazyImport("./scripts/deploy-lime-spark.ts");
+    await main(starterTokens);
   });
+
+task("deploy-stakenet", "Deploys Stakenet DeFi contract")
+  .addParam("erc20TokenAddress", "Please provide ERC20 token address")
+  .addParam(
+    "lockDurationInSeconds",
+    "Provide duration for which tokens will be locked",
+  )
+  .addParam("rewards", "Total rewards that are going to be paid in WEI")
+  .addParam(
+    "contractStakeLimit",
+    "The total tokens that can be staked in the contract",
+  )
+  .addParam(
+    "userStakeLimit",
+    "The total tokens that an account can stake in the contract",
+  )
+  .setAction(
+    async ({
+      erc20TokenAddress,
+      lockDurationInSeconds,
+      rewards,
+      contractStakeLimit,
+      userStakeLimit,
+    }) => {
+      const { main } = await lazyImport("./scripts/deploy-stakenet.ts");
+      await main(
+        erc20TokenAddress,
+        lockDurationInSeconds,
+        rewards,
+        contractStakeLimit,
+        userStakeLimit,
+      );
+    },
+  );
 
 const config: HardhatUserConfig = {
   networks: {
