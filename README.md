@@ -71,4 +71,5 @@ LimeSpark Contract link: https://sepolia.etherscan.io/address/0x2BdFb6a7B89e933B
 Stakenet Contract address: 0x45cDcAA1Faf1b4d6e8FAE010A922a61Cba971951\
 Stakenet Contract link: https://sepolia.etherscan.io/address/0x45cDcAA1Faf1b4d6e8FAE010A922a61Cba971951#code
 
-//npx hardhat deploy-stakenet --erc20-token-address 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 --lock-duration-in-seconds 86000 --rewards 100000000000000000000 --contract-stake-limit 300000000000000000000 --user-stake-limit 100000000000000000000
+Example Stakenet deploy command:\
+```npx hardhat deploy-stakenet --erc20-token-address 0x2BdFb6a7B89e933B0A8c34E3dcc32E8C684c7738 --lock-duration-in-seconds 86000 --rewards 100000000000000000000 --contract-stake-limit 300000000000000000000 --user-stake-limit 100000000000000000000```
