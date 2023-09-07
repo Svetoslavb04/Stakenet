@@ -224,52 +224,6 @@ describe("Stakenet", function () {
           latestBlockTimestamp,
         );
       });
-    });
-
-    describe("Validations", () => {
-      it("Should revert if user has already staked", async () => {
-        const { stakenet, otherAccount } = await loadFixture(
-          deployFixtureWithStakenetApproval,
-        );
-
-        const stake = ethers.parseEther("20");
-
-        await stakenet.connect(otherAccount).stake(stake);
-
-        await expect(
-          stakenet.connect(otherAccount).stake(stake),
-        ).to.revertedWithCustomError(stakenet, "AccountHasAlreadyStaked");
-      });
-
-      it("Should revert if user stake more than userStakeLimit and contractStakeLimit", async () => {
-        const { stakenet, otherAccount } = await loadFixture(
-          deployFixtureWithStakenetApproval,
-        );
-
-        const stakeAboveUserLimit = ethers.parseEther("200");
-
-        await expect(stakenet.connect(otherAccount).stake(stakeAboveUserLimit))
-          .to.revertedWithCustomError(stakenet, "StakeTooHigh")
-          .withArgs(ethers.parseEther("100"), ethers.parseEther("1000"));
-
-        const stakeAboveContractLimit = ethers.parseEther("10000");
-
-        await expect(
-          stakenet.connect(otherAccount).stake(stakeAboveContractLimit),
-        )
-          .to.revertedWithCustomError(stakenet, "StakeTooHigh")
-          .withArgs(ethers.parseEther("100"), ethers.parseEther("1000"));
-      });
-
-      it("Should revert if user stake less than userMinimumStake", async () => {
-        const { stakenet, otherAccount } = await loadFixture(
-          deployFixtureWithStakenetApproval,
-        );
-
-        await expect(
-          stakenet.connect(otherAccount).stake(2),
-        ).to.revertedWithCustomError(stakenet, "StakeTooLow");
-      });
 
       it("Should update user limit if higher than the contract limit", async () => {
         const oneDayInSeconds = 86_000;
@@ -330,6 +284,52 @@ describe("Stakenet", function () {
           await stakenet.contractStakeLimit(),
         );
       });
+    });
+
+    describe("Validations", () => {
+      it("Should revert if user has already staked", async () => {
+        const { stakenet, otherAccount } = await loadFixture(
+          deployFixtureWithStakenetApproval,
+        );
+
+        const stake = ethers.parseEther("20");
+
+        await stakenet.connect(otherAccount).stake(stake);
+
+        await expect(
+          stakenet.connect(otherAccount).stake(stake),
+        ).to.revertedWithCustomError(stakenet, "AccountHasAlreadyStaked");
+      });
+
+      it("Should revert if user stake more than userStakeLimit and contractStakeLimit", async () => {
+        const { stakenet, otherAccount } = await loadFixture(
+          deployFixtureWithStakenetApproval,
+        );
+
+        const stakeAboveUserLimit = ethers.parseEther("200");
+
+        await expect(stakenet.connect(otherAccount).stake(stakeAboveUserLimit))
+          .to.revertedWithCustomError(stakenet, "StakeTooHigh")
+          .withArgs(ethers.parseEther("100"), ethers.parseEther("1000"));
+
+        const stakeAboveContractLimit = ethers.parseEther("10000");
+
+        await expect(
+          stakenet.connect(otherAccount).stake(stakeAboveContractLimit),
+        )
+          .to.revertedWithCustomError(stakenet, "StakeTooHigh")
+          .withArgs(ethers.parseEther("100"), ethers.parseEther("1000"));
+      });
+
+      it("Should revert if user stake less than userMinimumStake", async () => {
+        const { stakenet, otherAccount } = await loadFixture(
+          deployFixtureWithStakenetApproval,
+        );
+
+        await expect(
+          stakenet.connect(otherAccount).stake(2),
+        ).to.revertedWithCustomError(stakenet, "StakeTooLow");
+      });
 
       it("Should revert if no potential rewards left", async () => {
         const oneDayInSeconds = 86_000;
@@ -387,6 +387,35 @@ describe("Stakenet", function () {
 
         await expect(stakenet.connect(account5).stake(ethers.parseEther("100")))
           .to.be.reverted;
+      });
+
+      it("Should revert on failed ERC20 Transfer transaction", async () => {
+        const oneDayInSeconds = 86_000;
+
+        const StakenetTestERC20 =
+          await ethers.getContractFactory("StakenetTestERC20");
+        const stakenetTestERC20 = await StakenetTestERC20.deploy();
+
+        await stakenetTestERC20.waitForDeployment();
+
+        const Stakenet = await ethers.getContractFactory("Stakenet");
+        const stakenet = await Stakenet.deploy(
+          await stakenetTestERC20.getAddress(),
+          oneDayInSeconds,
+          100,
+          100,
+          100,
+        );
+
+        await stakenet.waitForDeployment();
+
+        await stakenetTestERC20.mint(50);
+        await stakenetTestERC20.approve(stakenet, 50);
+
+        await expect(stakenet.stake(55)).to.be.revertedWithCustomError(
+          stakenet,
+          "ERC20TransferFailed",
+        );
       });
     });
 
@@ -507,6 +536,43 @@ describe("Stakenet", function () {
         await expect(
           stakenet.connect(otherAccount).withdraw(),
         ).to.revertedWithCustomError(stakenet, "AccountHasNotStaked");
+      });
+
+      it("Should revert on failed ERC20 Transaction", async () => {
+        const oneDayInSeconds = 86_000;
+
+        const StakenetTestERC20 =
+          await ethers.getContractFactory("StakenetTestERC20");
+        const stakenetTestERC20 = await StakenetTestERC20.deploy();
+
+        await stakenetTestERC20.waitForDeployment();
+
+        const Stakenet = await ethers.getContractFactory("Stakenet");
+        const stakenet = await Stakenet.deploy(
+          await stakenetTestERC20.getAddress(),
+          oneDayInSeconds,
+          100,
+          100,
+          100,
+        );
+
+        await stakenet.waitForDeployment();
+
+        await stakenetTestERC20.mint(100);
+        await stakenetTestERC20.approve(stakenet, 100);
+
+        await stakenet.stake(100);
+
+        await mine(2, { interval: oneDayInSeconds });
+
+        const [owner] = await ethers.getSigners();
+
+        stakenetTestERC20.connect(stakenet.runner).transfer(owner, 100);
+
+        await expect(stakenet.withdraw()).to.revertedWithCustomError(
+          stakenet,
+          "ERC20TransferFailed",
+        );
       });
     });
 
@@ -667,7 +733,7 @@ describe("Stakenet", function () {
         await expect(
           stakenet.connect(otherAccount).transfer(stakenetOwner, stake),
         )
-          .to.emit(stakenet, "PositionTransferred")
+          .to.emit(stakenet, "Transfer")
           .withArgs(otherAccount.address, stakenetOwner.address, stake);
       });
     });
@@ -814,7 +880,7 @@ describe("Stakenet", function () {
         await stakenet.connect(otherAccount).approve(stakenetOwner, stake);
 
         await expect(stakenet.transferFrom(otherAccount, stakenetOwner, stake))
-          .to.emit(stakenet, "PositionTransferred")
+          .to.emit(stakenet, "Transfer")
           .withArgs(otherAccount.address, stakenetOwner.address, stake);
       });
     });

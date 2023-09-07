@@ -36,17 +36,13 @@ contract Stakenet is ERC20 {
     /// @dev Error indicating that a staking amount is too low and the user will not receive a reward.
     error StakeTooLow(uint256 minimumStake);
 
+    /// @dev Error indicating that a transfer of ERC20 tokens has failed
+    error ERC20TransferFailed();
+
     /// Events:
 
     /// @dev Event emitted when an account successfully stakes tokens.
     event Staked(address indexed account, uint256 amount);
-
-    /// @dev Event emitted when an account transfers their staking position.
-    event PositionTransferred(
-        address indexed from,
-        address indexed to,
-        uint256 amount
-    );
 
     /// @dev Event emitted when an account successfully withdraws staked tokens and yield.
     event Withdrawn(address indexed account, uint256 amount);
@@ -57,7 +53,7 @@ contract Stakenet is ERC20 {
     /// Global state variables:
 
     /// @dev The ERC20 token contract used for staking.
-    ERC20 public erc20;
+    ERC20 public immutable erc20;
 
     /// @dev The duration for which staked tokens are locked.
     uint256 public immutable lockDurationInSeconds;
@@ -75,7 +71,7 @@ contract Stakenet is ERC20 {
     uint256 public userStakeLimit;
 
     /// @dev The minimum staking amount for a user based on yield percentage.
-    uint256 public userMinimumStake;
+    uint256 public immutable userMinimumStake;
 
     /// @dev Mapping to track whether an account has staked tokens.
     mapping(address => bool) public userHasStaked;
@@ -181,10 +177,14 @@ contract Stakenet is ERC20 {
             userStakeLimit = contractStakeLimit;
         }
 
-        erc20.transferFrom(msg.sender, address(this), _amount);
-
         emit StakeLimitsUpdated(contractStakeLimit, userStakeLimit);
         emit Staked(msg.sender, _amount);
+
+        bool success = erc20.transferFrom(msg.sender, address(this), _amount);
+
+        if (!success) {
+            revert ERC20TransferFailed();
+        }
     }
 
     /// @dev Transfer staking position to another address.
@@ -208,8 +208,6 @@ contract Stakenet is ERC20 {
         );
 
         _transfer(owner, _to, _amount);
-
-        emit PositionTransferred(msg.sender, _to, balanceOf(_to));
 
         return true;
     }
@@ -249,8 +247,6 @@ contract Stakenet is ERC20 {
         _spendAllowance(_from, spender, _amount);
         _transfer(_from, _to, _amount);
 
-        emit PositionTransferred(_from, _to, balanceOf(_to));
-
         return true;
     }
 
@@ -273,9 +269,16 @@ contract Stakenet is ERC20 {
 
         _burn(msg.sender, stakedTokens);
 
-        erc20.transfer(msg.sender, stakedTokens + accumulatedYield);
-
         emit Withdrawn(msg.sender, stakedTokens + accumulatedYield);
+
+        bool success = erc20.transfer(
+            msg.sender,
+            stakedTokens + accumulatedYield
+        );
+
+        if (!success) {
+            revert ERC20TransferFailed();
+        }
     }
 
     /// @dev Get the number of decimal places for the yield percentage.

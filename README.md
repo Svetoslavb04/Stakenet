@@ -46,13 +46,13 @@ The Stakenet Smart Contract is an Ethereum-based contract that allows users to s
 5. Deploy the LimeSpark smart contract to Sepolia testnet:
 
    ```bash
-   npx hardhat deploy-lime-spark --network sepolia
+   npx hardhat deploy-lime-spark --network sepolia --starter-tokens <STARTER_TOKENS>
    ```
 
 6. Deploy the Stakenet smart contract to Sepolia testnet:
 
    ```bash
-   npx hardhat deploy-stakenet-with-erc20 --network sepolia --erc20-token-address <ADDRESS_OF_ERC20>
+   npx hardhat deploy-stakenet --network sepolia --erc20-token-address <ADDRESS_OF_ERC20> --lock-duration-in-seconds <LOCK_DURATION> --rewards <REWARDS> --contract-stake-limit <CONTRACT_STAKE_LIMIT> --user-stake-limit <USER_STAKE_LIMIT>
    ```
 
    Run `npx hardhat help` to see all available commands
@@ -65,8 +65,10 @@ This project is licensed under the MIT License.
 
 This smart contract is provided as-is and has not been audited for security. Use it at your own risk.
 
-LimeSpark Contract address: 0xD650c3BAF8Bf45c98Fcd2fEc4bE46Aa374cD3cE3\
-LimeSpark Contract link: https://sepolia.etherscan.io/address/0xD650c3BAF8Bf45c98Fcd2fEc4bE46Aa374cD3cE3#code\
+LimeSpark Contract address: 0x2BdFb6a7B89e933B0A8c34E3dcc32E8C684c7738\
+LimeSpark Contract link: https://sepolia.etherscan.io/address/0x2BdFb6a7B89e933B0A8c34E3dcc32E8C684c7738#code
 
-Stakenet Contract address: \
-Stakenet Contract link:
+Stakenet Contract address: 0x45cDcAA1Faf1b4d6e8FAE010A922a61Cba971951\
+Stakenet Contract link: https://sepolia.etherscan.io/address/0x45cDcAA1Faf1b4d6e8FAE010A922a61Cba971951#code
+
+//npx hardhat deploy-stakenet --erc20-token-address 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 --lock-duration-in-seconds 86000 --rewards 100000000000000000000 --contract-stake-limit 300000000000000000000 --user-stake-limit 100000000000000000000
