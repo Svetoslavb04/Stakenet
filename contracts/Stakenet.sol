@@ -62,6 +62,9 @@ contract Stakenet is ERC20 {
     uint24 public immutable yieldPercentage;
 
     /// @dev The total rewards available for yield farming.
+    uint256 public immutable totalRewards;
+
+    /// @dev The remaining rewards available for yield farming.
     uint256 public rewards;
 
     /// @dev The maximum number of tokens the contract can hold for staking.
@@ -130,6 +133,7 @@ contract Stakenet is ERC20 {
         erc20 = ERC20(erc20TokenAddress);
 
         lockDurationInSeconds = _lockDurationInSeconds;
+        totalRewards = _rewards;
         rewards = _rewards;
 
         // Check and set stake limits
