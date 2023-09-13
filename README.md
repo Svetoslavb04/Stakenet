@@ -68,8 +68,8 @@ This smart contract is provided as-is and has not been audited for security. Use
 LimeSpark Contract address: 0x2BdFb6a7B89e933B0A8c34E3dcc32E8C684c7738\
 LimeSpark Contract link: https://sepolia.etherscan.io/address/0x2BdFb6a7B89e933B0A8c34E3dcc32E8C684c7738#code
 
-Stakenet Contract address: 0x45cDcAA1Faf1b4d6e8FAE010A922a61Cba971951\
-Stakenet Contract link: https://sepolia.etherscan.io/address/0x45cDcAA1Faf1b4d6e8FAE010A922a61Cba971951#code
+Stakenet Contract address: 0x258fCe6D2F82A45Fed7120211aa445F1fa16E05f\
+Stakenet Contract link: https://sepolia.etherscan.io/address/0x258fCe6D2F82A45Fed7120211aa445F1fa16E05f#code
 
 Example Stakenet deploy command:\
-```npx hardhat deploy-stakenet --erc20-token-address 0x2BdFb6a7B89e933B0A8c34E3dcc32E8C684c7738 --lock-duration-in-seconds 86000 --rewards 100000000000000000000 --contract-stake-limit 300000000000000000000 --user-stake-limit 100000000000000000000```
+`npx hardhat deploy-stakenet --erc20-token-address 0x2BdFb6a7B89e933B0A8c34E3dcc32E8C684c7738 --lock-duration-in-seconds 86000 --rewards 100000000000000000000 --contract-stake-limit 300000000000000000000 --user-stake-limit 100000000000000000000`
