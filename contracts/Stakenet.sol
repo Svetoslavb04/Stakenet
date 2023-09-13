@@ -218,6 +218,9 @@ contract Stakenet is ERC20 {
         return true;
     }
 
+    /// @dev Approve a spender to transfer you staking position
+    /// @param spender The spender who can transfer your position.
+    /// @param amount Should be equal to the staking position
     function approve(
         address spender,
         uint256 amount
