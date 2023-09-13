@@ -68,7 +68,8 @@ contract Stakenet is ERC20 {
     /// @dev The remaining rewards available for yield farming.
     uint256 public rewards;
 
-    /// @dev The maximum number of tokens the contract can hold for staking.
+    /// @dev The maximum number of tokens that can be staked in the contract.
+    /// @notice Changes are made on each stake to maintain the original yield percentage.
     uint256 public contractStakeLimit;
 
     /// @dev The maximum number of tokens a user can stake.
@@ -121,7 +122,7 @@ contract Stakenet is ERC20 {
     /// @param erc20TokenAddress The address of the ERC20 token used for staking.
     /// @param _lockDurationInSeconds The duration for which staked tokens are locked.
     /// @param _rewards The total rewards available for yield farming.
-    /// @param _contractStakeLimit The maximum number of tokens the contract can hold for staking.
+    /// @param _contractStakeLimit The maximum number of tokens that can be staked in the contract.
     /// @param _userStakeLimit The maximum number of tokens a user can stake.
     /// @notice The yield percentage is calculated based on the rewards and the contractStakeLimit
     constructor(
