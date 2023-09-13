@@ -21,7 +21,8 @@ contract Stakenet is ERC20 {
     /// @dev Error indicating that staked tokens are not yet unlocked.
     error TokensNotUnlockedYet(uint256 unlockTime);
 
-    /// @dev Error indicating that staked tokens are not yet unlocked.
+    /// @dev Error indicating that a given amount is less than the position of a user.
+    /// @notice An operation should be done with the whole position, not partially.
     error AmountLessThanPosition(uint256 amount, uint256 position);
 
     /// @dev Error indicating an invalid stake limit configuration.
