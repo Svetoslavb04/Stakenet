@@ -235,6 +235,10 @@ contract Stakenet is ERC20 {
         return true;
     }
 
+    /// @dev Transfer staking position from an owner to another address if msg.sender has allowance.
+    /// @param _from The address from which the staking position will be transferred.
+    /// @param _to The address to which the staking position will be transferred.
+    /// @param _amount Should be equal to the position of the owner
     function transferFrom(
         address _from,
         address _to,
