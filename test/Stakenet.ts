@@ -8,7 +8,7 @@ import {
 
 describe("Stakenet", function () {
   async function deployFixture() {
-    const oneDayInSeconds = 86_000;
+    const oneDayInSeconds = 86_400;
 
     const [stakenetOwner, otherAccount] = await ethers.getSigners();
 
@@ -40,7 +40,7 @@ describe("Stakenet", function () {
   }
 
   async function deployFixtureWithStakenetApproval() {
-    const oneDayInSeconds = 86_000;
+    const oneDayInSeconds = 86_400;
 
     const LimeSpark = await ethers.getContractFactory("LimeSpark");
     const limeSpark = await LimeSpark.deploy(ethers.parseEther("100"));
@@ -226,7 +226,7 @@ describe("Stakenet", function () {
       });
 
       it("Should update user limit if higher than the contract limit", async () => {
-        const oneDayInSeconds = 86_000;
+        const oneDayInSeconds = 86_400;
 
         const LimeSpark = await ethers.getContractFactory("LimeSpark");
         const limeSpark = await LimeSpark.deploy(ethers.parseEther("200"));
@@ -332,7 +332,7 @@ describe("Stakenet", function () {
       });
 
       it("Should revert if no potential rewards left", async () => {
-        const oneDayInSeconds = 86_000;
+        const oneDayInSeconds = 86_400;
 
         const LimeSpark = await ethers.getContractFactory("LimeSpark");
         const limeSpark = await LimeSpark.deploy(ethers.parseEther("100"));
@@ -390,7 +390,7 @@ describe("Stakenet", function () {
       });
 
       it("Should revert on failed ERC20 Transfer transaction", async () => {
-        const oneDayInSeconds = 86_000;
+        const oneDayInSeconds = 86_400;
 
         const StakenetTestERC20 =
           await ethers.getContractFactory("StakenetTestERC20");
@@ -477,7 +477,7 @@ describe("Stakenet", function () {
           (stakedTokens * yieldPercentage) /
           ethers.parseUnits("100", yieldDecimals);
 
-        const oneDay = 86_000;
+        const oneDay = 86_400;
 
         await mine(2, { interval: oneDay });
 
@@ -501,7 +501,7 @@ describe("Stakenet", function () {
         );
 
         await stakenet.connect(otherAccount).stake(ethers.parseEther("10"));
-        const oneDay = 86_000;
+        const oneDay = 86_400;
         await mine(2, { interval: oneDay });
         await stakenet.connect(otherAccount).withdraw();
 
@@ -512,6 +512,39 @@ describe("Stakenet", function () {
         expect(rewardsLeft).to.equal(ethers.parseEther("99"));
         expect(newContractLimit).to.equal(ethers.parseEther("990"));
         expect(yieldPercentage).to.equal(10_0000n);
+      });
+
+      it("Should withdraw a received position", async () => {
+        const { stakenet, limeSpark, stakenetOwner, otherAccount } =
+          await loadFixture(deployFixtureWithStakenetApproval);
+
+        await limeSpark.transfer(
+          await stakenet.getAddress(),
+          ethers.parseEther("100"),
+        );
+
+        await stakenet.connect(otherAccount).stake(ethers.parseEther("10"));
+        await stakenet.transfer(stakenetOwner.address, ethers.parseEther("10"));
+
+        const stakedTokens = await stakenet.balanceOf(otherAccount);
+        const yieldPercentage = await stakenet.yieldPercentage();
+        const yieldDecimals = await stakenet.yieldDecimals();
+
+        const accumulatedYield =
+          (stakedTokens * yieldPercentage) /
+          ethers.parseUnits("100", yieldDecimals);
+
+        const oneDay = 86_400;
+
+        await mine(2, { interval: oneDay });
+
+        await stakenet.connect(stakenetOwner).withdraw();
+
+        expect(await limeSpark.balanceOf(otherAccount)).to.be.equal(
+          ethers.parseEther("100") + accumulatedYield,
+        );
+
+        expect(await stakenet.balanceOf(otherAccount)).to.be.equal(0);
       });
     });
 
@@ -539,7 +572,7 @@ describe("Stakenet", function () {
       });
 
       it("Should revert on failed ERC20 Transaction", async () => {
-        const oneDayInSeconds = 86_000;
+        const oneDayInSeconds = 86_400;
 
         const StakenetTestERC20 =
           await ethers.getContractFactory("StakenetTestERC20");
@@ -588,7 +621,7 @@ describe("Stakenet", function () {
         );
 
         await stakenet.connect(otherAccount).stake(ethers.parseEther("10"));
-        const oneDay = 86_000;
+        const oneDay = 86_400;
         await mine(2, { interval: oneDay });
 
         await expect(stakenet.connect(otherAccount).withdraw())
