@@ -16,7 +16,7 @@ contract Stakenet is ERC20 {
     error AccountHasAlreadyStaked();
 
     /// @dev Error indicating that an account has not staked tokens.
-    error AccountHasNotStaked();
+    error AccountDoesNotOwnAPosition();
 
     /// @dev Error indicating that staked tokens are not yet unlocked.
     error TokensNotUnlockedYet(uint256 unlockTime);
@@ -96,11 +96,11 @@ contract Stakenet is ERC20 {
         _;
     }
 
-    /// @dev Modifier to ensure that an account has staked tokens.
+    /// @dev Modifier to ensure that an account owns a position.
     /// @param user The user that should have staked
-    modifier hasStaked(address user) {
-        if (!userHasStaked[user]) {
-            revert AccountHasNotStaked();
+    modifier ownPosition(address user) {
+        if (balanceOf(user) == 0) {
+            revert AccountDoesNotOwnAPosition();
         }
 
         _;
@@ -202,7 +202,7 @@ contract Stakenet is ERC20 {
     )
         public
         override
-        hasStaked(_msgSender())
+        ownPosition(_msgSender())
         amountEqualToPosition(_msgSender(), _amount)
         returns (bool)
     {
@@ -227,7 +227,7 @@ contract Stakenet is ERC20 {
     )
         public
         override
-        hasStaked(_msgSender())
+        ownPosition(_msgSender())
         amountEqualToPosition(_msgSender(), amount)
         returns (bool)
     {
@@ -246,7 +246,7 @@ contract Stakenet is ERC20 {
     )
         public
         override
-        hasStaked(_from)
+        ownPosition(_from)
         amountEqualToPosition(_from, _amount)
         returns (bool)
     {
@@ -264,7 +264,7 @@ contract Stakenet is ERC20 {
     }
 
     /// @dev Withdraw staked tokens along with accumulated yield after the lock duration.
-    function withdraw() external hasStaked(_msgSender()) {
+    function withdraw() external ownPosition(_msgSender()) {
         if (
             block.timestamp <=
             userStakedTimestamp[msg.sender] + lockDurationInSeconds
