@@ -213,6 +213,8 @@ contract Stakenet is ERC20 {
             userStakedTimestamp[msg.sender]
         );
 
+        userStakedTimestamp[msg.sender] = 0;
+
         _transfer(owner, _to, _amount);
 
         return true;
@@ -256,6 +258,8 @@ contract Stakenet is ERC20 {
             userStakedTimestamp[_to],
             userStakedTimestamp[_from]
         );
+
+        userStakedTimestamp[_from] = 0;
 
         _spendAllowance(_from, spender, _amount);
         _transfer(_from, _to, _amount);

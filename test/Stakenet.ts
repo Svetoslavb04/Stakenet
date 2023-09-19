@@ -764,6 +764,8 @@ describe("Stakenet", function () {
 
         await stakenet.connect(otherAccount).stake(ethers.parseEther("10"));
 
+        const stakeTimeStamp = await stakenet.userStakedTimestamp(otherAccount);
+
         await mine(10);
 
         await stakenet
@@ -771,7 +773,7 @@ describe("Stakenet", function () {
           .transfer(stakenetOwner, await stakenet.balanceOf(otherAccount));
 
         expect(await stakenet.userStakedTimestamp(stakenetOwner)).to.be.equal(
-          await stakenet.userStakedTimestamp(otherAccount),
+          stakeTimeStamp,
         );
       });
 
@@ -783,9 +785,16 @@ describe("Stakenet", function () {
         const positionAmount = ethers.parseEther("10");
 
         await stakenet.connect(otherAccount).stake(positionAmount);
+
+        const stakeTimeStamp = await stakenet.userStakedTimestamp(otherAccount);
+
         await stakenet
           .connect(otherAccount)
           .transfer(stakenetOwner.address, positionAmount);
+
+        expect(await stakenet.userStakedTimestamp(stakenetOwner)).to.be.equal(
+          stakeTimeStamp,
+        );
 
         expect(await stakenet.balanceOf(stakenetOwner.address)).to.be.equal(
           positionAmount,
@@ -793,8 +802,16 @@ describe("Stakenet", function () {
 
         await stakenet.transfer(otherAccount, positionAmount);
 
-        expect(await stakenet.balanceOf(otherAccount.address)).to.be.equal(
+        expect(await stakenet.userStakedTimestamp(stakenetOwner)).to.be.equal(
+          0,
+        );
+
+        expect(await stakenet.balanceOf(otherAccount)).to.be.equal(
           positionAmount,
+        );
+
+        expect(await stakenet.userStakedTimestamp(otherAccount)).to.be.equal(
+          stakeTimeStamp,
         );
 
         expect(await stakenet.balanceOf(stakenetOwner.address)).to.be.equal(0);
@@ -928,6 +945,8 @@ describe("Stakenet", function () {
 
         await stakenet.connect(otherAccount).stake(ethers.parseEther("10"));
 
+        const stakeTimeStamp = await stakenet.userStakedTimestamp(otherAccount);
+
         await mine(10);
 
         await stakenet
@@ -941,11 +960,11 @@ describe("Stakenet", function () {
         );
 
         expect(await stakenet.userStakedTimestamp(stakenetOwner)).to.be.equal(
-          await stakenet.userStakedTimestamp(otherAccount),
+          stakeTimeStamp,
         );
       });
 
-      it("Should transfer _froms's position to _to", async () => {
+      it("Should transfer _froms's received position to _to", async () => {
         const { stakenet, stakenetOwner, otherAccount } = await loadFixture(
           deployFixtureWithStakenetApproval,
         );
@@ -953,6 +972,9 @@ describe("Stakenet", function () {
         const stake = ethers.parseEther("10");
 
         await stakenet.connect(otherAccount).stake(stake);
+
+        const stakeTimeStamp = await stakenet.userStakedTimestamp(otherAccount);
+
         await stakenet.connect(otherAccount).transfer(stakenetOwner, stake);
 
         await stakenet.approve(otherAccount, stake);
@@ -960,6 +982,14 @@ describe("Stakenet", function () {
         await stakenet
           .connect(otherAccount)
           .transferFrom(stakenetOwner, otherAccount, stake);
+
+        expect(await stakenet.userStakedTimestamp(stakenetOwner)).to.be.equal(
+          0,
+        );
+
+        expect(await stakenet.userStakedTimestamp(otherAccount)).to.be.equal(
+          stakeTimeStamp,
+        );
 
         expect(await stakenet.balanceOf(otherAccount.address)).to.be.equal(
           stake,
